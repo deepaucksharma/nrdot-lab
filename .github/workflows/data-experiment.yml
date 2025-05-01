@@ -1,0 +1,252 @@
+name: Data Experiment
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration_minutes:
+        description: 'Duration in minutes to run each scenario'
+        required: true
+        default: '30'
+      run_baseline:
+        description: 'Run baseline scenario (20s, no filtering)'
+        type: boolean
+        default: true
+      run_standard:
+        description: 'Run standard scenario (60s with filtering)'
+        type: boolean
+        default: true
+      run_minimal_mounts:
+        description: 'Run minimal mounts scenario'
+        type: boolean
+        default: true
+
+jobs:
+  run-experiments:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6 hours max timeout for long-running tests
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Set up environment
+        run: |
+          cp .env.example .env
+          echo "NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }}" >> .env
+          echo "NEW_RELIC_API_KEY=${{ secrets.NEW_RELIC_API_KEY }}" >> .env
+          echo "NR_ACCOUNT_ID=${{ secrets.NR_ACCOUNT_ID }}" >> .env
+      
+      - name: Set script permissions
+        run: |
+          chmod +x ./scripts/*.sh
+          chmod +x ./load-image/entrypoint.sh
+      
+      - name: Create custom scenario script
+        run: |
+          cat > ./scripts/run_custom_scenarios.sh << 'EOF'
+          #!/usr/bin/env bash
+          set -e
+          
+          DURATION_MINUTES=${{ github.event.inputs.duration_minutes }}
+          RESULTS_DIR="./results"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          
+          echo "🚀 Starting custom scenario experiments"
+          echo "🕒 Each scenario will run for ${DURATION_MINUTES} minutes"
+          
+          # Create results directory
+          mkdir -p "${RESULTS_DIR}/${TIMESTAMP}"
+          
+          # Track scenarios run
+          SCENARIOS_RUN=0
+          
+          # Run baseline if selected
+          if [[ "${{ github.event.inputs.run_baseline }}" == "true" ]]; then
+            echo "===================================="
+            echo "📊 Running BASELINE scenario"
+            echo "===================================="
+            
+            # Setup baseline config
+            cat > config/newrelic-infra.yml << EOF_CONFIG
+          license_key: ${NEW_RELIC_LICENSE_KEY}
+          enable_process_metrics: true
+          metrics_process_sample_rate: 20
+          collect_process_commandline: false
+          EOF_CONFIG
+            
+            # Run the scenario
+            COMPOSE_FILE=docker-compose.yml:docker-compose.override.yml:overrides/seccomp-disabled.yml docker compose up -d
+            
+            echo "⏳ Running baseline for ${DURATION_MINUTES} minutes..."
+            sleep $((DURATION_MINUTES * 60))
+            
+            # Collect results
+            ./scripts/validate_ingest.sh > "${RESULTS_DIR}/${TIMESTAMP}/baseline_results.txt"
+            docker compose logs > "${RESULTS_DIR}/${TIMESTAMP}/baseline_logs.txt"
+            
+            # Cleanup
+            docker compose down
+            
+            SCENARIOS_RUN=$((SCENARIOS_RUN + 1))
+            sleep 30
+          fi
+          
+          # Run standard if selected
+          if [[ "${{ github.event.inputs.run_standard }}" == "true" ]]; then
+            echo "===================================="
+            echo "📊 Running STANDARD scenario"
+            echo "===================================="
+            
+            # Setup standard config
+            cat > config/newrelic-infra.yml << EOF_CONFIG
+          license_key: ${NEW_RELIC_LICENSE_KEY}
+          enable_process_metrics: true
+          metrics_process_sample_rate: 60
+          collect_process_commandline: false
+          EOF_CONFIG
+            
+            # Run the scenario
+            COMPOSE_FILE=docker-compose.yml:docker-compose.override.yml:overrides/seccomp-disabled.yml docker compose up -d
+            
+            echo "⏳ Running standard for ${DURATION_MINUTES} minutes..."
+            sleep $((DURATION_MINUTES * 60))
+            
+            # Collect results
+            ./scripts/validate_ingest.sh > "${RESULTS_DIR}/${TIMESTAMP}/standard_results.txt"
+            docker compose logs > "${RESULTS_DIR}/${TIMESTAMP}/standard_logs.txt"
+            
+            # Cleanup
+            docker compose down
+            
+            SCENARIOS_RUN=$((SCENARIOS_RUN + 1))
+            sleep 30
+          fi
+          
+          # Run minimal mounts if selected
+          if [[ "${{ github.event.inputs.run_minimal_mounts }}" == "true" ]]; then
+            echo "===================================="
+            echo "📊 Running MINIMAL MOUNTS scenario"
+            echo "===================================="
+            
+            # Setup minimal mounts config
+            cat > config/newrelic-infra.yml << EOF_CONFIG
+          license_key: ${NEW_RELIC_LICENSE_KEY}
+          enable_process_metrics: true
+          metrics_process_sample_rate: 60
+          collect_process_commandline: false
+          EOF_CONFIG
+            
+            # Run the scenario
+            COMPOSE_FILE=docker-compose.yml:docker-compose.override.yml:overrides/min-mounts.yml:overrides/seccomp-disabled.yml docker compose up -d
+            
+            echo "⏳ Running minimal mounts for ${DURATION_MINUTES} minutes..."
+            sleep $((DURATION_MINUTES * 60))
+            
+            # Collect results
+            ./scripts/validate_ingest.sh > "${RESULTS_DIR}/${TIMESTAMP}/minimal_mounts_results.txt"
+            docker compose logs > "${RESULTS_DIR}/${TIMESTAMP}/minimal_mounts_logs.txt"
+            
+            # Cleanup
+            docker compose down
+            
+            SCENARIOS_RUN=$((SCENARIOS_RUN + 1))
+            sleep 30
+          fi
+          
+          # Generate summary report
+          echo "📊 Generating summary report..."
+          
+          cat > "${RESULTS_DIR}/${TIMESTAMP}/summary.md" << EOF_SUMMARY
+          # ProcessSample Optimization Experiment Results
+          
+          Experiment run on: $(date)
+          Duration per scenario: ${DURATION_MINUTES} minutes
+          
+          ## Results
+          
+          | Scenario | ProcessSample Ingest |
+          |----------|---------------------|
+          EOF_SUMMARY
+          
+          # Add baseline results if available
+          if [[ -f "${RESULTS_DIR}/${TIMESTAMP}/baseline_results.txt" ]]; then
+            BASELINE_INGEST=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/baseline_results.txt" | awk '{print $NF}')
+            echo "| Baseline (20s) | ${BASELINE_INGEST:-N/A} |" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"
+          fi
+          
+          # Add standard results if available
+          if [[ -f "${RESULTS_DIR}/${TIMESTAMP}/standard_results.txt" ]]; then
+            STANDARD_INGEST=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/standard_results.txt" | awk '{print $NF}')
+            echo "| Standard (60s) | ${STANDARD_INGEST:-N/A} |" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"
+          fi
+          
+          # Add minimal mounts results if available
+          if [[ -f "${RESULTS_DIR}/${TIMESTAMP}/minimal_mounts_results.txt" ]]; then
+            MINIMAL_INGEST=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/minimal_mounts_results.txt" | awk '{print $NF}')
+            echo "| Minimal Mounts | ${MINIMAL_INGEST:-N/A} |" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"
+          fi
+          
+          # Add reduction analysis if baseline is available
+          if [[ -f "${RESULTS_DIR}/${TIMESTAMP}/baseline_results.txt" ]]; then
+            BASELINE_INGEST=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/baseline_results.txt" | awk '{print $NF}')
+            
+            if [[ -n "${BASELINE_INGEST}" && "${BASELINE_INGEST}" != "N/A" ]]; then
+              echo -e "\n## Reduction Analysis\n" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"
+              
+              # Calculate standard reduction if available
+              if [[ -f "${RESULTS_DIR}/${TIMESTAMP}/standard_results.txt" ]]; then
+                STANDARD_INGEST=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/standard_results.txt" | awk '{print $NF}')
+                if [[ -n "${STANDARD_INGEST}" && "${STANDARD_INGEST}" != "N/A" ]]; then
+                  REDUCTION=$(echo "scale=2; (1 - ${STANDARD_INGEST}/${BASELINE_INGEST}) * 100" | bc)
+                  echo "- Standard scenario: **${REDUCTION}%** reduction compared to baseline" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"
+                fi
+              fi
+              
+              # Calculate minimal mounts reduction if available
+              if [[ -f "${RESULTS_DIR}/${TIMESTAMP}/minimal_mounts_results.txt" ]]; then
+                MINIMAL_INGEST=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/minimal_mounts_results.txt" | awk '{print $NF}')
+                if [[ -n "${MINIMAL_INGEST}" && "${MINIMAL_INGEST}" != "N/A" ]]; then
+                  REDUCTION=$(echo "scale=2; (1 - ${MINIMAL_INGEST}/${BASELINE_INGEST}) * 100" | bc)
+                  echo "- Minimal Mounts scenario: **${REDUCTION}%** reduction compared to baseline" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"
+                fi
+              fi
+            fi
+          fi
+          
+          echo "🎉 Experiment completed! Results in ${RESULTS_DIR}/${TIMESTAMP}/summary.md"
+          
+          # Check if any scenarios were run
+          if [[ ${SCENARIOS_RUN} -eq 0 ]]; then
+            echo "❌ No scenarios were run. Please select at least one scenario."
+            exit 1
+          fi
+          EOF
+          
+          chmod +x ./scripts/run_custom_scenarios.sh
+      
+      - name: Run experiments
+        run: ./scripts/run_custom_scenarios.sh
+        env:
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+          NEW_RELIC_API_KEY: ${{ secrets.NEW_RELIC_API_KEY }}
+          NR_ACCOUNT_ID: ${{ secrets.NR_ACCOUNT_ID }}
+      
+      - name: Generate NRDB report
+        if: always()
+        run: |
+          if [[ -n "${{ secrets.NEW_RELIC_API_KEY }}" && -n "${{ secrets.NR_ACCOUNT_ID }}" ]]; then
+            ./scripts/generate_nrdb_report.sh || echo "NRDB report generation failed but continuing"
+          else
+            echo "Skipping NRDB report - API key or account ID not provided"
+          fi
+      
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: experiment-results
+          path: ./results/
+          retention-days: 90

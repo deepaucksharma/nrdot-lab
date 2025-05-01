@@ -414,6 +414,66 @@ When properly implemented, you can expect:
 | Minimal-Mounts | 60s | Yes | ~70-75% |
 | With Container Metrics | 60s | Yes | ~65-70% |
 
+## Automated Scenarios and Reporting
+
+The lab includes scripts for running automated scenarios and generating detailed reports:
+
+### Running Scenario Tests
+
+You can run multiple scenarios automatically and compare their results using:
+
+```bash
+./scripts/run_scenarios.sh [duration_minutes]
+```
+
+This will:
+1. Run each configured scenario for the specified duration (default: 30 minutes)
+2. Collect ingest metrics for each scenario
+3. Generate a summary report comparing the results
+
+The scenarios include:
+- **Standard** (60s sampling with filtering)
+- **Minimal Mounts** (restricted filesystem access)
+- **Baseline** (20s sampling for comparison)
+
+### Generating NRDB Reports
+
+For more detailed analysis, you can generate reports based on NRQL queries:
+
+```bash
+./scripts/generate_nrdb_report.sh
+```
+
+This script queries the New Relic database to create detailed reports on:
+- ProcessSample volume over time
+- Volume by host and process
+- CPU and memory usage metrics
+- Average event size
+
+### Visualizing Results
+
+To visualize the comparison between scenarios:
+
+```bash
+python scripts/generate_visualization.py
+```
+
+This generates charts comparing ingest volumes and creates a detailed Markdown report with analysis.
+
+### GitHub Actions for Long-Running Experiments
+
+The repository includes a GitHub Actions workflow for running long-duration experiments:
+
+1. Go to the "Actions" tab in the repository
+2. Select the "Data Experiment" workflow
+3. Click "Run workflow"
+4. Configure:
+   - Duration in minutes for each scenario
+   - Which scenarios to run
+5. The results will be uploaded as artifacts when complete
+
+This allows you to run experiments for hours to get statistically significant data without keeping your local machine running.
+
 ## Conclusion
 
-The New Relic ProcessSample Optimization Lab provides a practical, hands-on approach to reducing data ingest costs without sacrificing essential observability. By implementing the strategies demonstrated in this lab, organizations can achieve significant cost savings while maintaining the ability to effectively monitor and troubleshoot their infrastructure.
+The New Relic ProcessSample Optimization Lab provides a practical, hands-on approach to reducing data ingest costs without sacrificing essential observability. By implementing the strategies demonstrated in this lab and using the automated testing tools, organizations can achieve significant cost savings while maintaining the ability to effectively monitor and troubleshoot their infrastructure.
