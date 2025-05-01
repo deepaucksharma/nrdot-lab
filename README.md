@@ -4,33 +4,41 @@
 [![CI Status](https://img.shields.io/github/actions/workflow/status/deepaucksharma/infra-lab/ci.yml?branch=master&label=ci)](https://github.com/deepaucksharma/infra-lab/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-A containerized lab environment for optimizing New Relic ProcessSample events cost without sacrificing observability.
+A containerized lab environment for optimizing New Relic ProcessSample events cost without sacrificing observability. Reduce ingest costs by ~70% while maintaining essential visibility.
 
 ## Core Features
 
-- ~70% reduction in ProcessSample ingestion volume
-- System-level metrics via OpenTelemetry
-- Cost validation tools
-
-## Optimization Strategies
-
-1. **Sample Rate**: 60s interval (vs 20s default)
-2. **Process Filtering**: Exclude non-essential processes
-3. **OTel Metrics**: High-frequency system metrics
+- **Sample Rate Optimization**: 60s interval (vs 20s default)
+- **Smart Process Filtering**: Exclude non-essential processes 
+- **Complementary Metrics**: High-frequency system data via OpenTelemetry
+- **Real-time Validation**: Measure actual ingest reduction
 
 ## Quick Start
 
 ```bash
+# Clone repository
+git clone https://github.com/deepaucksharma/infra-lab.git
+cd infra-lab
+
 # Configure credentials
 cp .env.example .env
-# Edit .env with your New Relic license key, API key, and account ID
+# Edit .env with your NR license key, API key, and account ID
 
 # Start the lab
 make up
 
-# Validate results (after 5 minutes)
+# Monitor logs
+make logs
+
+# Validate results (after 5-10 minutes)
 make validate
 ```
+
+## Key Components
+
+- **Infrastructure Agent**: Collects ProcessSample with optimized configuration
+- **OpenTelemetry Collector**: Provides system metrics via hostmetrics receiver
+- **Synthetic Load Generator**: Creates realistic process patterns for testing
 
 ## Available Scenarios
 
@@ -39,10 +47,10 @@ make validate
 | Default | `make up` | Default optimization |
 | Docker Stats | `make docker-stats` | Add container metrics |
 
-## Requirements
+## Prerequisites
 
-- Docker and Docker Compose v2
-- `jq` for validation
+- Docker Engine and Docker Compose v2+
+- `make` and `jq` utilities
 - New Relic account with license key, API key, and account ID
 
 ## Documentation

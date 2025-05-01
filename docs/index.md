@@ -34,16 +34,25 @@ make validate
 ## Documentation Map
 
 - [Optimization Concepts](concepts.md)
-- [Scenario Details](scenarios.md)
+- [Current Scenarios](scenarios.md)
+- [Advanced Scenarios](advanced-scenarios.md)
+- [Strategic Roadmap](roadmap.md)
 - **How-to Guides**
   - [Installation](how-to/install.md)
   - [Validation](how-to/validate.md)
   - [Troubleshooting](how-to/troubleshoot.md)
   - [Customization](how-to/extend.md)
 - **Reference**
+  - [Technical Architecture](reference/technical-architecture.md)
   - [Infrastructure Configuration](reference/newrelic-infra.md)
   - [OpenTelemetry Configuration](reference/otel-config.md)
   - [NRQL Queries](reference/nrql-cheatsheet.md)
+
+## Key Components
+
+- **Infrastructure Agent**: Collects ProcessSample with optimized configuration
+- **OpenTelemetry Collector**: Provides system metrics via hostmetrics receiver
+- **Synthetic Load Generator**: Creates realistic process patterns for testing
 
 ## Prerequisites
 
