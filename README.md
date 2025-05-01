@@ -1,7 +1,7 @@
 # New Relic ProcessSample Optimization Lab
 
 [![Documentation](https://img.shields.io/badge/docs-online-brightgreen)](https://deepaucksharma.github.io/infra-lab/)
-[![CI Status](https://img.shields.io/github/actions/workflow/status/deepaucksharma/infra-lab/ci.yml?branch=master&label=ci)](https://github.com/deepaucksharma/infra-lab/actions)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/deepaucksharma/infra-lab/ci.yml?branch=main&label=ci)](https://github.com/deepaucksharma/infra-lab/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 A containerized lab environment for optimizing New Relic ProcessSample events cost without sacrificing observability. Reduce ingest costs by ~70% while maintaining essential visibility.
@@ -45,7 +45,9 @@ make validate
 | Scenario | Command | Purpose |
 |----------|---------|---------|
 | Default | `make up` | Default optimization |
+| Minimal Mounts | `make minimal` | Minimal filesystem access |
 | Docker Stats | `make docker-stats` | Add container metrics |
+| Seccomp Off | `make secure-off` | Disable security (debugging) |
 
 ## Prerequisites
 

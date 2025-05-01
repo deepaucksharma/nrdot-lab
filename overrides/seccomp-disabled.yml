@@ -1,0 +1,7 @@
+services:
+  infra:
+    security_opt: []
+  otel:
+    security_opt: []
+  otel-docker:
+    security_opt: []

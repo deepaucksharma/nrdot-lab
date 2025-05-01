@@ -6,6 +6,7 @@ nav:
   - Home: index.md
   - Quick-start: quickstart.md
   - Concepts: concepts.md
+  - Comparison: comparison-table.md
   - Scenarios:
       - Current Scenarios: scenarios.md
       - Advanced Scenarios: advanced-scenarios.md
@@ -23,6 +24,7 @@ nav:
       - NRQL Cheat-sheet: reference/nrql-cheatsheet.md
   - Latest Results: latest-results.md
   - Changelog: changelog.md
+  - Contributing: CONTRIBUTING.md
 theme:
   name: material
   features: 

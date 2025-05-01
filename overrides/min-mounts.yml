@@ -1,0 +1,11 @@
+services:
+  infra:
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - ./config/newrelic-infra.yml:/etc/newrelic-infra.yml:ro
+  otel:
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - ./config/otel-config.yaml:/etc/otel-config.yaml:ro

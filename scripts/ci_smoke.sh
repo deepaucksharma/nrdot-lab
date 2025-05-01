@@ -19,6 +19,10 @@ services:
       - /tmp
       - /var/run
       - /var/db/newrelic-infra
+  otel:
+    tmpfs:
+      - /tmp
+      - /var/run
   load:
     tmpfs:
       - /tmp
@@ -26,24 +30,82 @@ services:
 EOF
 
 echo "Starting containers..."
-docker compose --profile default -f docker-compose.yml -f docker-compose.ci.yml up -d
+SECURE_MODE=true docker compose --profile default -f docker-compose.yml -f docker-compose.ci.yml up -d
 
-echo "Waiting for containers to start..."
-sleep 10
+max_wait=60
+waited=0
+echo "⏳ Waiting up to ${max_wait}s for containers to be healthy..."
 
-echo "Checking container status..."
-docker compose ps
-docker compose logs
+while [ $waited -lt $max_wait ]; do
+  echo "Checking container health (${waited}s elapsed)..."
+  
+  # Check if all containers are running
+  running_count=$(docker compose ps --services --filter "status=running" | wc -l)
+  
+  # Check if all running containers are healthy
+  healthy_count=$(docker compose ps --services --filter "health=healthy" | wc -l)
+  
+  # We need at least 3 containers (infra, otel, load)
+  if [ "$running_count" -ge 3 ] && [ "$healthy_count" -ge 3 ]; then
+    echo "✅ All containers are running and healthy!"
+    break
+  fi
+  
+  # If containers are running but unhealthy after 30s, something is wrong
+  if [ $waited -gt 30 ] && [ "$running_count" -ge 3 ] && [ "$healthy_count" -lt 3 ]; then
+    echo "❌ Containers are running but not all are healthy after ${waited}s"
+    docker compose ps
+    docker compose logs
+    docker compose down
+    exit 1
+  fi
+  
+  sleep 5
+  waited=$((waited + 5))
+done
 
-# Just a simple verification step
-echo "Checking config files..."
-docker compose exec infra ls -la /etc/newrelic-infra.yml || true
-docker compose exec otel ls -la /etc/otel-config.yaml || true
+if [ $waited -ge $max_wait ]; then
+  echo "❌ Timed out waiting for containers to be healthy"
+  docker compose ps
+  docker compose logs
+  docker compose down
+  exit 1
+fi
 
-# Just check for logs
-docker compose logs --tail=20 infra otel load || true
+# Verify configuration
+echo "Checking Infrastructure Agent configuration..."
+docker compose exec infra cat /etc/newrelic-infra.yml || (echo "❌ Failed to read Infrastructure configuration"; exit 1)
+
+echo "Checking OpenTelemetry configuration..."
+docker compose exec otel cat /etc/otel-config.yaml || (echo "❌ Failed to read OpenTelemetry configuration"; exit 1)
+
+# Verify logs for expected patterns
+echo "Verifying Infrastructure Agent logs..."
+if ! docker compose logs infra | grep -q "Starting New Relic Infrastructure"; then
+  echo "❌ Infrastructure Agent is not starting properly"
+  docker compose logs infra
+  docker compose down
+  exit 1
+fi
+
+echo "Verifying OpenTelemetry Collector logs..."
+if ! docker compose logs otel | grep -q "Starting OpenTelemetry Collector"; then
+  echo "❌ OpenTelemetry Collector is not starting properly"
+  docker compose logs otel
+  docker compose down
+  exit 1
+fi
+
+echo "Verifying load generator logs..."
+if ! docker compose logs load | grep -q "stress-ng"; then
+  echo "❌ Load generator is not running properly"
+  docker compose logs load
+  docker compose down
+  exit 1
+fi
 
 # Clean up
-docker compose down || true
+echo "All checks passed! Cleaning up..."
+docker compose down
 
-echo "🎉 Smoke test completed - this is just a basic verification now"
+echo "🎉 Smoke test completed successfully"

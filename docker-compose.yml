@@ -1,77 +1,94 @@
 version: "3.9"
 
+x-readonly: &readonly
+  read_only: true
+  tmpfs: [/tmp, /var/run]
+
 services:
   infra:
-    image: newrelic/infrastructure:1.28.0
+    image: newrelic/infrastructure:1.64.0
     container_name: nr-infra
     environment:
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
       NRIA_VERBOSE: 1
+    cap_add: [SYS_PTRACE, DAC_READ_SEARCH]
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - ./config/newrelic-infra.yml:/etc/newrelic-infra.yml:ro
     healthcheck:
-      test: ["CMD", "ls", "/"]
+      test: ["CMD", "curl", "-f", "http://localhost:18003/status", "||", "exit", "1"]
       interval: 10s
       retries: 5
     restart: unless-stopped
+    security_opt:
+      - ${SECURE_MODE:+seccomp:./profiles/seccomp-nr.json}
     deploy:
       resources:
         limits:
           memory: 512M
+    <<: *readonly
     profiles: ["default", "minimal-mounts", "docker-stats"]
 
   otel:
-    image: otel/opentelemetry-collector-contrib:0.57.2
+    image: otel/opentelemetry-collector-contrib:0.98.0
     container_name: otel-collector
     command: ["--config=/etc/otel-config.yaml"]
     environment:
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
       HOST_PROC: /host/proc
       HOST_SYS: /host/sys
+    cap_add: [SYS_PTRACE, DAC_READ_SEARCH]
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - ./config/otel-config.yaml:/etc/otel-config.yaml:ro
     healthcheck:
-      test: ["CMD", "ls", "/"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:13133/healthz"]
       interval: 10s
       retries: 5
     restart: unless-stopped
+    security_opt:
+      - ${SECURE_MODE:+seccomp:./profiles/seccomp-nr.json}
     deploy:
       resources:
         limits:
           memory: 512M
+    <<: *readonly
     profiles: ["default", "minimal-mounts"]
 
   otel-docker:
-    image: otel/opentelemetry-collector-contrib:0.57.2
+    image: otel/opentelemetry-collector-contrib:0.98.0
     container_name: otel-collector-docker
     command: ["--config=/etc/otel-config.yaml"]
     environment:
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
       HOST_PROC: /host/proc
       HOST_SYS: /host/sys
+    cap_add: [SYS_PTRACE, DAC_READ_SEARCH]
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - ./config/otel-config.yaml:/etc/otel-config.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # SECURITY NOTE: For development only, exposes Docker daemon
     healthcheck:
-      test: ["CMD", "ls", "/"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:13133/healthz"]
       interval: 10s
       retries: 5
     restart: unless-stopped
+    security_opt:
+      - ${SECURE_MODE:+seccomp:./profiles/seccomp-nr.json}
     deploy:
       resources:
         limits:
           memory: 512M
+    <<: *readonly
     profiles: ["docker-stats"]
 
   load:
     build: ./load-image
     container_name: stress-load
+    user: "1000:1000"
     entrypoint: ["/entrypoint.sh"]
     environment:
       STRESS_CPU: ${STRESS_CPU:-2}
@@ -80,8 +97,9 @@ services:
       resources:
         limits: {cpus: "1.5", memory: 512M}
     healthcheck:
-      test: ["CMD", "ls", "/"]
+      test: ["CMD-SHELL", "pidof stress-ng || exit 1"]
       interval: 10s
       retries: 3
     restart: unless-stopped
+    <<: *readonly
     profiles: ["default", "minimal-mounts", "docker-stats"]

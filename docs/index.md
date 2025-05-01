@@ -34,6 +34,7 @@ make validate
 ## Documentation Map
 
 - [Optimization Concepts](concepts.md)
+- [Infrastructure vs OpenTelemetry Comparison](comparison-table.md)
 - [Current Scenarios](scenarios.md)
 - [Advanced Scenarios](advanced-scenarios.md)
 - [Strategic Roadmap](roadmap.md)
