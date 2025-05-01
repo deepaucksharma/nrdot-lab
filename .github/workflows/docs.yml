@@ -1,7 +1,7 @@
 name: Documentation
 on:
   push:
-    branches: [main, master]
+    branches: [master]
     paths:
       - 'docs/**'
       - 'CHANGELOG.md'
@@ -22,4 +22,7 @@ jobs:
       - name: Install dependencies
         run: pip install mkdocs-material pymdown-extensions
       - name: Deploy docs
-        run: mkdocs gh-deploy --force
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          mkdocs gh-deploy --force
