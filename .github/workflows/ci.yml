@@ -22,4 +22,6 @@ jobs:
           echo "NR_ACCOUNT_ID=12345678" >> .env
       
       - name: Run smoke test
-        run: ./scripts/ci_smoke.sh
+        run: |
+          chmod +x ./scripts/ci_smoke.sh
+          ./scripts/ci_smoke.sh
