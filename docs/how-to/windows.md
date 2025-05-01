@@ -16,8 +16,8 @@ This guide provides Windows-specific instructions for running the New Relic Proc
 
 Using Git Bash or PowerShell:
 ```bash
-git clone https://github.com/your-org/newrelic-process-lab.git
-cd newrelic-process-lab
+git clone https://github.com/deepaucksharma/infra-lab.git
+cd infra-lab
 ```
 
 ### 2. Configure Environment Variables

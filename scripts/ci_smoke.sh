@@ -4,8 +4,8 @@ set -e
 echo "🚀 CI smoke test"
 
 # Ensure scripts are executable
-chmod +x $(dirname "$0")/*.sh
-chmod +x $(dirname "$0")/../load-image/entrypoint.sh
+chmod +x "$(dirname "$0")"/*.sh
+chmod +x "$(dirname "$0")/../load-image/entrypoint.sh"
 
 # Create tmpfs mount locations for containers
 mkdir -p /tmp/nr-data || true
@@ -27,7 +27,7 @@ services:
 EOF
 
 echo "Starting containers with seccomp disabled and tmpfs mounts..."
-docker compose -f docker-compose.yml -f docker-compose.ci.yml -f overrides/seccomp-disabled.yml up -d infra otel load
+SECURE_MODE= docker compose --profile default --profile seccomp-off -f docker-compose.yml -f docker-compose.ci.yml up -d
 
 max=60; waited=0
 echo "⏳ waiting up to ${max}s for health..."

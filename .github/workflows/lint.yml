@@ -28,7 +28,7 @@ jobs:
         uses: DavidAnson/markdownlint-cli2-action@v9
         with:
           globs: "**/*.md"
-          config: '.github/workflows/markdownlint.json'
+          config: '.markdownlint.json'
 
   link-check:
     name: Check markdown links
@@ -38,7 +38,7 @@ jobs:
       - name: Link Checker
         uses: lycheeverse/lychee-action@v1.5.4
         with:
-          args: --verbose --no-progress '**/*.md' -i 'file:///*'
+          args: '--verbose --no-progress "**/*.md" --exclude "http://127.0.0.1*" --exclude "file:///*"'
           fail: true
 
   trivy:
