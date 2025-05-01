@@ -1,0 +1,64 @@
+version: "3.9"
+
+x-readonly: &readonly
+  read_only: true
+  tmpfs: [/tmp, /var/run]
+
+services:
+  infra:
+    image: newrelic/infrastructure:1.60.1
+    container_name: nr-infra
+    environment:
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+    cap_add: [SYS_PTRACE, DAC_READ_SEARCH]
+    volumes:
+      - /:/host:ro
+      - ./config/newrelic-infra.yml:/etc/newrelic-infra.yml:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pidof newrelic-infra || exit 1"]
+      interval: 10s
+      retries: 5
+    restart: unless-stopped
+    security_opt:
+      - seccomp:./profiles/seccomp-nr.json
+    <<: *readonly
+
+  otel:
+    image: otel/opentelemetry-collector-contrib:0.98.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel-config.yaml"]
+    environment:
+      OTEL_EXPORTER_OTLP_HEADERS: "api-key=${NEW_RELIC_LICENSE_KEY}"
+      HOST_PROC: /host/proc
+      HOST_SYS:  /host/sys
+    volumes:
+      - /:/host:ro
+      - ./config/otel-config.yaml:/etc/otel-config.yaml:ro
+    depends_on:
+      infra: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:13133/healthz"]
+      interval: 10s
+      retries: 5
+    restart: unless-stopped
+    security_opt:
+      - seccomp:./profiles/seccomp-nr.json
+    <<: *readonly
+
+  load:
+    build: ./load-image
+    container_name: stress-load
+    user: "1000:1000"
+    entrypoint: ["/entrypoint.sh"]
+    environment:
+      STRESS_CPU: ${STRESS_CPU}
+      STRESS_MEM: ${STRESS_MEM}
+    deploy:
+      resources:
+        limits: {cpus: "1.5", memory: 512M}
+    healthcheck:
+      test: ["CMD-SHELL", "pidof stress-ng || exit 1"]
+      interval: 10s
+      retries: 3
+    restart: unless-stopped
+    <<: *readonly

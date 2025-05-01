@@ -1,0 +1,7 @@
+services:
+  infra:
+    security_opt:
+      - seccomp:unconfined
+  otel:
+    security_opt:
+      - seccomp:unconfined

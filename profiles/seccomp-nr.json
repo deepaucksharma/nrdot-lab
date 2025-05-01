@@ -1,0 +1,16 @@
+{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "syscalls": [
+    {
+      "names": [
+        "read", "write", "exit", "sigreturn", "futex", "clock_gettime",
+        "openat", "close", "newfstatat", "lseek", "mmap", "munmap",
+        "rt_sigaction", "rt_sigprocmask", "getpid", "getppid", "getuid",
+        "getgid", "geteuid", "getegid", "clone", "wait4", "prctl",
+        "arch_prctl", "socket", "connect", "recvfrom", "sendto",
+        "utimensat", "statfs", "uname", "ioctl"
+      ],
+      "action": "SCMP_ACT_ALLOW"
+    }
+  ]
+}

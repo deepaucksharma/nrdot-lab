@@ -1,0 +1,27 @@
+extensions:
+  health_check: {}
+receivers:
+  hostmetrics:
+    collection_interval: 10s
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 400
+  filter/core-metrics:
+    metrics:
+      exclude:
+        match_type: regexp
+        metric_names: ["process.*"]
+  batch: {}
+exporters:
+  otlp:
+    endpoint: "otlp.nr-data.net:4317"
+    headers:
+      api-key: "${NEW_RELIC_LICENSE_KEY}"
+service:
+  extensions: [health_check]
+  pipelines:
+    metrics:
+      receivers: [hostmetrics]
+      processors: [memory_limiter, filter/core-metrics, batch]
+      exporters: [otlp]
