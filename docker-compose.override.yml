@@ -1,0 +1,11 @@
+services:
+  infra:
+    tmpfs:
+      - /tmp
+      - /var/run
+      - /var/db/newrelic-infra
+  load:
+    tmpfs:
+      - /tmp
+      - /var/run
+      - /home/appuser

@@ -1,7 +1,8 @@
 .env
 .env.local
 *.log
-docker-compose.override.yml
+# Allow our specific override file
+# docker-compose.override.yml
 .DS_Store
 __pycache__/
 load-image/*.tar
