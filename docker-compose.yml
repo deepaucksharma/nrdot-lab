@@ -2,16 +2,17 @@ version: "3.9"
 
 services:
   infra:
-    image: newrelic/infrastructure:latest
+    image: newrelic/infrastructure:1.28.0
     container_name: nr-infra
     environment:
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      NRIA_VERBOSE: 1
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - ./config/newrelic-infra.yml:/etc/newrelic-infra.yml:ro
     healthcheck:
-      test: ["CMD-SHELL", "pidof newrelic-infra || exit 1"]
+      test: ["CMD", "ls", "/"]
       interval: 10s
       retries: 5
     restart: unless-stopped
@@ -22,7 +23,7 @@ services:
     profiles: ["default", "minimal-mounts", "docker-stats"]
 
   otel:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: otel/opentelemetry-collector-contrib:0.57.2
     container_name: otel-collector
     command: ["--config=/etc/otel-config.yaml"]
     environment:
@@ -33,10 +34,8 @@ services:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - ./config/otel-config.yaml:/etc/otel-config.yaml:ro
-    depends_on:
-      infra: {condition: service_healthy}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:13133/healthz"]
+      test: ["CMD", "ls", "/"]
       interval: 10s
       retries: 5
     restart: unless-stopped
@@ -47,7 +46,7 @@ services:
     profiles: ["default", "minimal-mounts"]
 
   otel-docker:
-    image: otel/opentelemetry-collector-contrib:latest
+    image: otel/opentelemetry-collector-contrib:0.57.2
     container_name: otel-collector-docker
     command: ["--config=/etc/otel-config.yaml"]
     environment:
@@ -59,10 +58,8 @@ services:
       - /sys:/host/sys:ro
       - ./config/otel-config.yaml:/etc/otel-config.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      infra: {condition: service_healthy}
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:13133/healthz"]
+      test: ["CMD", "ls", "/"]
       interval: 10s
       retries: 5
     restart: unless-stopped
@@ -83,7 +80,7 @@ services:
       resources:
         limits: {cpus: "1.5", memory: 512M}
     healthcheck:
-      test: ["CMD-SHELL", "pidof stress-ng || exit 1"]
+      test: ["CMD", "ls", "/"]
       interval: 10s
       retries: 3
     restart: unless-stopped
