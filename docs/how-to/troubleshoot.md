@@ -40,19 +40,6 @@ exclude_matching_metrics:
 2. Verify containers are running: `docker ps`
 3. Check logs: `make logs`
 
-## Security Issues
-
-### Seccomp Blocked Syscalls
-
-If you see "seccomp blocked syscall" errors:
-
-1. Temporarily disable seccomp:
-   ```bash
-   COMPOSE_FILE=docker-compose.yml:overrides/seccomp-disabled.yml make up
-   ```
-2. Identify blocked syscalls in logs
-3. Add required syscalls to profiles/seccomp-nr.json
-
 ## OpenTelemetry Issues
 
 ### Missing Hostmetrics

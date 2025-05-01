@@ -29,9 +29,7 @@ make validate
 | Scenario | Command | Use Case |
 |----------|---------|----------|
 | **Standard** | `make up` | General optimization |
-| **Minimal-Mounts** | `COMPOSE_FILE=docker-compose.yml:overrides/min-mounts.yml make up` | Enhanced security |
-| **Docker-Stats** | `COMPOSE_FILE=docker-compose.yml:overrides/docker-stats.yml make up` | Container metrics |
-| **Seccomp-Off** | `COMPOSE_FILE=docker-compose.yml:overrides/seccomp-disabled.yml make up` | Troubleshooting |
+| **Docker-Stats** | `make docker-stats` | Container metrics |
 
 ## Documentation Map
 

@@ -1,9 +1,0 @@
-services:
-  infra:
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-  otel:
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro

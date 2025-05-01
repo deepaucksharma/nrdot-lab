@@ -48,19 +48,11 @@ Or using Command Prompt:
 docker-compose up -d
 ```
 
-#### Running with Overrides
-
-Due to path separator differences on Windows, you'll need to use the `-f` flag instead of `COMPOSE_FILE` environment variable:
+#### Docker Stats Mode
 
 ```powershell
-# Minimal Mounts mode
-docker-compose -f docker-compose.yml -f overrides/min-mounts.yml up -d
-
-# Seccomp Disabled mode
-docker-compose -f docker-compose.yml -f overrides/seccomp-disabled.yml up -d
-
 # Docker Stats mode
-docker-compose -f docker-compose.yml -f overrides/docker-stats.yml up -d
+docker-compose -f docker-compose.yml up -d --profile docker-stats
 ```
 
 ### 4. Viewing Logs

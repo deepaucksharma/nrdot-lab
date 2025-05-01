@@ -34,14 +34,8 @@ make up
 Alternative configurations:
 
 ```bash
-# Enhanced security
-COMPOSE_FILE=docker-compose.yml:overrides/min-mounts.yml make up
-
 # Container metrics
-COMPOSE_FILE=docker-compose.yml:overrides/docker-stats.yml make up
-
-# Troubleshooting
-COMPOSE_FILE=docker-compose.yml:overrides/seccomp-disabled.yml make up
+make docker-stats
 ```
 
 ### 3. Monitor & Validate
