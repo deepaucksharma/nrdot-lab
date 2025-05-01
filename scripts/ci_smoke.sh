@@ -34,7 +34,7 @@ echo "⏳ waiting up to ${max}s for health..."
 while [[ $waited -lt $max ]]; do
   echo "Checking container health (${waited}s elapsed)..."
   docker compose ps
-  healthy=$(docker compose ps --format '{{.Name}} {{.Status}}' | grep -c "Up" || true)
+  healthy=$(docker compose ps --filter "status=running" --format '{{.Name}} {{.State.Health.Status}}' | grep -c healthy || true)
   [[ $healthy -eq 3 ]] && break
   sleep 5; waited=$((waited+5))
 done

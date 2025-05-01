@@ -77,23 +77,30 @@ metrics_process_sample_rate: 60
 ### 2. Process Filtering
 
 **Implementation**:
-The Infrastructure Agent is configured to exclude specific processes or patterns:
+The Infrastructure Agent can be configured to exclude specific processes or patterns.
+
+> **IMPORTANT FORMAT NOTE**: The exact format for process filtering depends on your New Relic Infrastructure Agent version. We have removed the filtering configuration for now due to compatibility issues between different agent versions.
+
+When implementing process filtering, test each of these formats and use the one that works with your specific agent version:
 
 ```yaml
-# config/newrelic-infra.yml
+# Option 1: Map Format
+exclude_matching_metrics:
+  process.*.*: true
+```
+
+```yaml
+# Option 2: Array Format
 exclude_matching_metrics:
   - process.*.*
 ```
 
-**Customization options**:
-You can modify the filters to target specific processes, for example:
+For specific processes, you can target more granular patterns.
 
-```yaml
-exclude_matching_metrics:
-  - process.systemd.*
-  - process.sshd.*
-  - process.daemon.*
-```
+**Troubleshooting**:
+- If you see "cannot unmarshal !!bool `true` into []string", switch from map format to array format.
+- If you see "cannot unmarshal !!seq into config.ExcludeMetricsMap", switch from array format to map format.
+- If you continue to have issues, remove the exclude_matching_metrics section altogether and rely on the other optimization methods.
 
 **Impact**:
 - Further reduces data volume beyond sample rate changes

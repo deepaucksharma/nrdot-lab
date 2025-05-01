@@ -1,116 +1,76 @@
 # New Relic ProcessSample Optimization Lab
 
-This repository contains a containerized lab environment for optimizing New Relic ProcessSample events cost without sacrificing observability. The lab demonstrates how to achieve approximately 70% reduction in ProcessSample ingestion volume through a combination of sampling rate adjustments, filtering, and alternative metrics sources.
+[![Documentation](https://img.shields.io/badge/docs-online-brightgreen)](https://your-org.github.io/deepaucksharma-infra-lab/)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/your-org/deepaucksharma-infra-lab/ci.yml?branch=main&label=ci)](https://github.com/your-org/deepaucksharma-infra-lab/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-## Prerequisites
+A containerized lab environment for optimizing New Relic ProcessSample events cost without sacrificing observability.
+
+## 🚀 Key Features
+
+- Achieve ~70% reduction in ProcessSample ingestion volume
+- Multiple security posture configurations
+- Complete metrics visibility using OpenTelemetry
+- Validation scripts to measure real cost savings
+
+## 📊 Core Optimization Strategies
+
+1. **Throttled Sample Rate**: 60s interval instead of 20s (~67% reduction)
+2. **Process Filtering**: Exclude non-essential process metrics (~5-10% additional reduction)
+3. **OpenTelemetry Hostmetrics**: Alternative system-level metrics at 10s intervals
+
+## 🏁 Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/your-org/deepaucksharma-infra-lab.git
+cd deepaucksharma-infra-lab
+
+# Configure credentials
+cp .env.example .env
+# Edit .env with your New Relic license key, API key, and account ID
+
+# Start the lab
+make up
+
+# Check ingestion statistics (after a few minutes)
+make validate
+```
+
+## 📘 Documentation
+
+[**View the complete documentation**](https://your-org.github.io/deepaucksharma-infra-lab/)
+
+The documentation includes:
+
+- [Quick-start guide](https://your-org.github.io/deepaucksharma-infra-lab/quickstart/)
+- [Concepts and theory](https://your-org.github.io/deepaucksharma-infra-lab/concepts/)
+- [Detailed scenarios](https://your-org.github.io/deepaucksharma-infra-lab/scenarios/)
+- [How-to guides](https://your-org.github.io/deepaucksharma-infra-lab/how-to/install/)
+- [Troubleshooting](https://your-org.github.io/deepaucksharma-infra-lab/how-to/troubleshoot/)
+- [NRQL reference](https://your-org.github.io/deepaucksharma-infra-lab/reference/nrql-cheatsheet/)
+
+## 🛡️ Security Postures
+
+The lab supports multiple security configurations:
+
+| Configuration | Command | Security Level |
+|---------------|---------|--------------|
+| Standard | `make up` | 🔒 Normal |
+| Minimal Mounts | `COMPOSE_FILE=docker-compose.yml:overrides/min-mounts.yml make up` | 🔒🔒 Highest |
+| Docker Stats | `COMPOSE_FILE=docker-compose.yml:overrides/docker-stats.yml make up` | 🔓 Reduced (Docker socket access) |
+| Seccomp Off | `COMPOSE_FILE=docker-compose.yml:overrides/seccomp-disabled.yml make up` | ⚠️ For debugging only |
+
+## 📋 Prerequisites
 
 - Docker and Docker Compose
-- `jq` (for `make validate`)
-- `strace` (for debugging, optional)
-- New Relic account with:
-  - License key
-  - User API key (for validation)
-  - Account ID
+- `jq` (for validation scripts)
+- New Relic account with license key, user API key, and account ID
 
-## Getting Started
+## 📦 Recent Updates
 
-1. Configure your New Relic credentials:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your license key, API key, and account ID
-   ```
+- Added Docker stats collection capability
+- Enhanced documentation with MkDocs Material theme
+- Improved process filtering configuration
 
-2. Launch the lab environment:
-   ```bash
-   make up
-   ```
-
-3. Monitor the logs:
-   ```bash
-   make logs
-   ```
-
-4. Check ingestion statistics:
-   ```bash
-   make validate
-   ```
-
-5. Stop the lab:
-   ```bash
-   make down
-   ```
-
-## Available Commands
-
-| Command | Description |
-|---------|-------------|
-| `make up` | Start all containers |
-| `make down` | Stop and remove containers |
-| `make logs` | View container logs |
-| `make validate` | Check ProcessSample ingest volume |
-| `make clean` | Remove containers and volumes |
-| `make smoke` | Run CI smoke tests |
-| `make help` | Show available commands |
-
-## Lab Scenarios
-
-The lab supports multiple configurations for different requirements:
-
-### 1. Standard Lab (Default)
-```bash
-make up
-```
-- 60-second ProcessSample interval
-- Process filtering enabled
-- Full host metrics available
-- Seccomp security profile enforced
-
-### 2. Minimal-Mounts Mode
-```bash
-COMPOSE_FILE=docker-compose.yml:overrides/min-mounts.yml make up
-```
-- Only mounts `/proc` and `/sys`
-- No disk/filesystem metrics
-- Highest security posture
-
-### 3. Seccomp-Off Troubleshooting
-```bash
-COMPOSE_FILE=docker-compose.yml:overrides/seccomp-disabled.yml make up
-```
-- Disabled seccomp profile
-- For debugging "seccomp blocked syscall" errors
-- Reduced security (for troubleshooting only)
-
-### 4. Container Metrics (docker_stats)
-To enable container metrics collection:
-
-1. Add to `otel-config.yaml`:
-   ```yaml
-   receivers:
-     docker_stats:
-       endpoint: "unix:///var/run/docker.sock"
-   ```
-
-2. Add to `otel` service in `docker-compose.yml`:
-   ```yaml
-   volumes:
-     - /var/run/docker.sock:/var/run/docker.sock:ro
-   ```
-
-**Note**: This increases the attack surface. Use with caution.
-
-## Security Considerations
-
-- **Full-host mount (`/:/host:ro`)**: The default configuration mounts the entire host filesystem to provide complete metrics. Use `min-mounts.yml` for a more secure setup.
-- **Seccomp profiles**: Restrict container syscalls to a minimal allowed set. Can be disabled for debugging.
-- **Read-only filesystems**: All volumes are mounted read-only with tmpfs for writable directories.
-
-## Optimization Strategy
-
-The lab implements three core strategies:
-
-1. **Throttled Sample Rate**: Increases the interval from 20s to 60s (~67% reduction)
-2. **Process Filtering**: Excludes non-essential process metrics (~5-10% additional reduction)
-3. **OpenTelemetry Hostmetrics**: Provides alternative system-level metrics at 10s intervals
-
-For detailed guidance, troubleshooting, and additional scenarios, see the [lab guide](docs/lab-guide.md).
+For the complete change history, see the [Changelog](https://your-org.github.io/deepaucksharma-infra-lab/changelog/).

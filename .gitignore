@@ -8,3 +8,14 @@ __pycache__/
 load-image/*.tar
 .vscode/
 .idea/
+
+# Generated documentation site
+site/
+
+# Auto-generated reports (Keep the directories but ignore content)
+results/*/*/*
+results/*/summary.md
+scripts/*_report.md
+
+# Exclude MkDocs cache
+.cache/

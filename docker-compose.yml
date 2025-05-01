@@ -9,7 +9,7 @@ services:
     image: newrelic/infrastructure:1.60.1
     container_name: nr-infra
     environment:
-      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      NEW_RELIC_LICENSE_KEY: 0123456789abcdef0123456789abcdef01234567
     cap_add: [SYS_PTRACE, DAC_READ_SEARCH]
     volumes:
       - /:/host:ro
@@ -20,7 +20,7 @@ services:
       retries: 5
     restart: unless-stopped
     security_opt:
-      - seccomp:./profiles/seccomp-nr.json
+      - ${SECURE_MODE:+seccomp:./profiles/seccomp-nr.json}
     <<: *readonly
 
   otel:
@@ -28,12 +28,13 @@ services:
     container_name: otel-collector
     command: ["--config=/etc/otel-config.yaml"]
     environment:
-      OTEL_EXPORTER_OTLP_HEADERS: "api-key=${NEW_RELIC_LICENSE_KEY}"
+      OTEL_EXPORTER_OTLP_HEADERS: "api-key=0123456789abcdef0123456789abcdef01234567"
       HOST_PROC: /host/proc
       HOST_SYS:  /host/sys
     volumes:
       - /:/host:ro
       - ./config/otel-config.yaml:/etc/otel-config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Add Docker socket for container metrics
     depends_on:
       infra: {condition: service_healthy}
     healthcheck:
@@ -42,7 +43,7 @@ services:
       retries: 5
     restart: unless-stopped
     security_opt:
-      - seccomp:./profiles/seccomp-nr.json
+      - ${SECURE_MODE:+seccomp:./profiles/seccomp-nr.json}
     <<: *readonly
 
   load:

@@ -50,7 +50,7 @@ run_scenario() {
   
   # Validate ingest stats and save to results
   echo "📈 Collecting metrics..."
-  ./scripts/validate_ingest.sh > "${RESULTS_DIR}/${TIMESTAMP}/${name}_validation.txt"
+  ./scripts/validate_ingest.sh > "${RESULTS_DIR}/${TIMESTAMP}/${name}_results.txt"
   
   # Get logs and save to results
   docker compose logs > "${RESULTS_DIR}/${TIMESTAMP}/${name}_logs.txt"
@@ -101,9 +101,8 @@ run_scenario "standard" "docker-compose.yml:docker-compose.override.yml:override
 # Minimal Mounts Scenario
 run_scenario "minimal_mounts" "docker-compose.yml:docker-compose.override.yml:overrides/min-mounts.yml:overrides/seccomp-disabled.yml" "Minimal filesystem mounts with 60s sampling"
 
-# Container Metrics Scenario (simulate with annotations)
-echo "Note: Container metrics scenario would require modifying otel-config.yaml"
-echo "      This is left as a manual exercise"
+# Container Metrics Scenario
+run_scenario "container_metrics" "docker-compose.yml:docker-compose.override.yml:overrides/docker-stats.yml:overrides/seccomp-disabled.yml" "Container metrics via docker_stats with 60s process sampling"
 
 # Baseline Scenario (20s, no filtering)
 baseline_setup
@@ -119,12 +118,13 @@ echo "| Scenario | Description | ProcessSample Ingest (GB) |" >> "${RESULTS_DIR}
 echo "|----------|-------------|---------------------------|" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"
 
 # Extract the ingest GB for each scenario
-for scenario in standard minimal_mounts baseline; do
-  ingest=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/${scenario}_validation.txt" | awk '{print $NF}')
+for scenario in standard minimal_mounts container_metrics baseline; do
+  ingest=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/${scenario}_results.txt" | awk '{print $NF}')
   description=""
   case $scenario in
     standard) description="60s sampling with filtering" ;;
     minimal_mounts) description="Minimal filesystem mounts" ;;
+    container_metrics) description="Container metrics via docker_stats" ;;
     baseline) description="20s sampling, no filtering" ;;
   esac
   echo "| ${scenario} | ${description} | ${ingest} |" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"
@@ -135,10 +135,10 @@ echo "## Reduction Analysis" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"
 echo "" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"
 
 # Calculate reduction percentages
-baseline_ingest=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/baseline_validation.txt" | awk '{print $NF}')
+baseline_ingest=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/baseline_results.txt" | awk '{print $NF}')
 if [[ -n "$baseline_ingest" && "$baseline_ingest" != "N/A" ]]; then
-  for scenario in standard minimal_mounts; do
-    scenario_ingest=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/${scenario}_validation.txt" | awk '{print $NF}')
+  for scenario in standard minimal_mounts container_metrics; do
+    scenario_ingest=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/${scenario}_results.txt" | awk '{print $NF}')
     if [[ -n "$scenario_ingest" && "$scenario_ingest" != "N/A" ]]; then
       reduction=$(echo "scale=2; (1 - ${scenario_ingest}/${baseline_ingest}) * 100" | bc)
       echo "- ${scenario}: ${reduction}% reduction compared to baseline" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"

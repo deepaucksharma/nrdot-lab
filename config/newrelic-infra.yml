@@ -2,3 +2,6 @@ license_key: 0123456789abcdef0123456789abcdef01234567
 enable_process_metrics: true
 metrics_process_sample_rate: 60
 collect_process_commandline: false
+exclude_matching_metrics:
+  process.name: ["systemd"]
+  process.executable: ["/usr/bin/containerd", "/usr/sbin/cron"]
