@@ -1,5 +1,14 @@
 extensions:
   health_check: {}
+  storage:
+    type: file_storage
+    directory: /tmp/otel-storage
+    timeout: 10s
+    compaction:
+      directory: /tmp/otel-storage/compaction
+      on_start: true
+      on_rebound: true
+
 receivers:
   hostmetrics:
     collection_interval: 10s
@@ -13,6 +22,7 @@ receivers:
   docker_stats:
     endpoint: "unix:///var/run/docker.sock"
     collection_interval: 10s
+
 processors:
   memory_limiter:
     check_interval: 1s
@@ -22,16 +32,26 @@ processors:
       include:
         match_type: regexp
         metric_names: ["^system\\.(cpu|memory|disk|filesystem|network|load)\\..*"]
-  batch: {}
+  batch:
+    send_batch_size: 1000
+    timeout: 5s
+    send_batch_max_size: 1500
+
 exporters:
   otlp:
     endpoint: "otlp.nr-data.net:4317"
     headers:
       api-key: "${NEW_RELIC_LICENSE_KEY}"
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 5m
+
 service:
-  extensions: [health_check]
+  extensions: [health_check, storage]
   pipelines:
     metrics:
-      receivers: [hostmetrics, docker_stats]
+      receivers: [hostmetrics]
       processors: [memory_limiter, filter/core-metrics, batch]
       exporters: [otlp]

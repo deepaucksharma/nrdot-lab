@@ -6,13 +6,14 @@ x-readonly: &readonly
 
 services:
   infra:
-    image: newrelic/infrastructure:1.60.1
+    image: newrelic/infrastructure:1.65.0
     container_name: nr-infra
     environment:
-      NEW_RELIC_LICENSE_KEY: 0123456789abcdef0123456789abcdef01234567
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
     cap_add: [SYS_PTRACE, DAC_READ_SEARCH]
     volumes:
-      - /:/host:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
       - ./config/newrelic-infra.yml:/etc/newrelic-infra.yml:ro
     healthcheck:
       test: ["CMD-SHELL", "pidof newrelic-infra || exit 1"]
@@ -21,20 +22,25 @@ services:
     restart: unless-stopped
     security_opt:
       - ${SECURE_MODE:+seccomp:./profiles/seccomp-nr.json}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     <<: *readonly
+    profiles: ["default", "minimal-mounts", "docker-stats", "seccomp-off"]
 
   otel:
-    image: otel/opentelemetry-collector-contrib:0.98.0
+    image: otel/opentelemetry-collector-contrib:0.99.0
     container_name: otel-collector
     command: ["--config=/etc/otel-config.yaml"]
     environment:
-      OTEL_EXPORTER_OTLP_HEADERS: "api-key=0123456789abcdef0123456789abcdef01234567"
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
       HOST_PROC: /host/proc
-      HOST_SYS:  /host/sys
+      HOST_SYS: /host/sys
     volumes:
-      - /:/host:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
       - ./config/otel-config.yaml:/etc/otel-config.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro  # Add Docker socket for container metrics
     depends_on:
       infra: {condition: service_healthy}
     healthcheck:
@@ -44,7 +50,41 @@ services:
     restart: unless-stopped
     security_opt:
       - ${SECURE_MODE:+seccomp:./profiles/seccomp-nr.json}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     <<: *readonly
+    profiles: ["default", "minimal-mounts", "seccomp-off"]
+
+  otel-docker:
+    image: otel/opentelemetry-collector-contrib:0.99.0
+    container_name: otel-collector-docker
+    command: ["--config=/etc/otel-config.yaml"]
+    environment:
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
+      HOST_PROC: /host/proc
+      HOST_SYS: /host/sys
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - ./config/otel-config.yaml:/etc/otel-config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      infra: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:13133/healthz"]
+      interval: 10s
+      retries: 5
+    restart: unless-stopped
+    security_opt:
+      - ${SECURE_MODE:+seccomp:./profiles/seccomp-nr.json}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    <<: *readonly
+    profiles: ["docker-stats"]
 
   load:
     build: ./load-image
@@ -52,8 +92,8 @@ services:
     user: "1000:1000"
     entrypoint: ["/entrypoint.sh"]
     environment:
-      STRESS_CPU: ${STRESS_CPU}
-      STRESS_MEM: ${STRESS_MEM}
+      STRESS_CPU: ${STRESS_CPU:-2}
+      STRESS_MEM: ${STRESS_MEM:-128M}
     deploy:
       resources:
         limits: {cpus: "1.5", memory: 512M}
@@ -63,3 +103,4 @@ services:
       retries: 3
     restart: unless-stopped
     <<: *readonly
+    profiles: ["default", "minimal-mounts", "docker-stats", "seccomp-off"]

@@ -26,7 +26,7 @@ A containerized lab environment for optimizing New Relic ProcessSample events co
 cp .env.example .env
 # Edit .env with your New Relic license key, API key, and account ID
 
-# Start the lab
+# Start the lab (with minimal filesystem access by default)
 make up
 
 # Validate results (after 5 minutes)
@@ -37,14 +37,22 @@ make validate
 
 | Scenario | Command | Purpose |
 |----------|---------|---------|
-| Standard | `make up` | Default optimization |
-| Minimal-Mounts | `COMPOSE_FILE=docker-compose.yml:overrides/min-mounts.yml make up` | Enhanced security |
-| Docker-Stats | `COMPOSE_FILE=docker-compose.yml:overrides/docker-stats.yml make up` | Container metrics |
-| Seccomp-Off | `COMPOSE_FILE=docker-compose.yml:overrides/seccomp-disabled.yml make up` | Troubleshooting |
+| Default (Minimal) | `make up` | Default optimization with minimal mounts |
+| Full Host Access | `make full-host` | Full filesystem access (less secure) |
+| Docker Stats | `make docker-stats` | Add container metrics |
+| Seccomp Off | `make seccomp-off` | Disable seccomp for troubleshooting |
+| Enhanced Seccomp | `make seccomp-v2` | Use improved seccomp profile |
+
+## Security Features
+
+- Limited filesystem access by default (only `/proc` and `/sys`)
+- Seccomp profile restricts allowed syscalls
+- Read-only containers with minimal capabilities
+- No hard-coded credentials
 
 ## Requirements
 
-- Docker and Docker Compose
+- Docker and Docker Compose v2
 - `jq` for validation
 - New Relic account with license key, API key, and account ID
 

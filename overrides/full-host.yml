@@ -1,0 +1,7 @@
+services:
+  infra:
+    volumes:
+      - /:/host:ro
+  otel:
+    volumes:
+      - /:/host:ro
