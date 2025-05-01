@@ -1,0 +1,282 @@
+name: Scenario Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      duration_minutes:
+        description: 'Duration in minutes to run each scenario'
+        required: true
+        default: '15'
+  schedule:
+    # Run weekly on Sunday at 1:00 AM UTC
+    - cron: '0 1 * * 0'
+
+jobs:
+  run-all-scenarios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6 hours max timeout
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Set up environment
+        run: |
+          cp .env.example .env
+          echo "NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }}" >> .env
+          echo "NEW_RELIC_API_KEY=${{ secrets.NEW_RELIC_API_KEY }}" >> .env
+          echo "NR_ACCOUNT_ID=${{ secrets.NR_ACCOUNT_ID }}" >> .env
+      
+      - name: Set script permissions
+        run: |
+          chmod +x ./scripts/*.sh
+          chmod +x ./load-image/entrypoint.sh
+      
+      - name: Create comprehensive test runner
+        run: |
+          cat > ./scripts/run_all_scenarios.sh << 'EOF'
+          #!/usr/bin/env bash
+          set -e
+          
+          # Get duration from workflow input or use default
+          DURATION_MINUTES=${1:-15}
+          RESULTS_DIR="./results"
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          
+          echo "🚀 Starting comprehensive scenario tests"
+          echo "🕒 Each scenario will run for ${DURATION_MINUTES} minutes"
+          
+          # Create results directory
+          mkdir -p "${RESULTS_DIR}/${TIMESTAMP}"
+          
+          # Function to run a scenario and collect results
+          run_scenario() {
+            local NAME=$1
+            local CONFIG=$2
+            local COMPOSE_FILES=$3
+            local DURATION=$4
+            
+            echo "===================================="
+            echo "📊 Running ${NAME} scenario"
+            echo "===================================="
+            
+            # Setup config if provided
+            if [[ -n "${CONFIG}" ]]; then
+              echo "${CONFIG}" > config/newrelic-infra.yml
+            fi
+            
+            # Run the scenario
+            COMPOSE_FILE=${COMPOSE_FILES} docker compose up -d
+            
+            echo "⏳ Running ${NAME} for ${DURATION} minutes..."
+            sleep $((DURATION * 60))
+            
+            # Collect results
+            ./scripts/validate_ingest.sh > "${RESULTS_DIR}/${TIMESTAMP}/${NAME// /_}_results.txt" || echo "Validation failed for ${NAME}"
+            docker compose logs > "${RESULTS_DIR}/${TIMESTAMP}/${NAME// /_}_logs.txt"
+            
+            # Cleanup
+            docker compose down -v
+            
+            sleep 30
+          }
+          
+          # Baseline scenario (20s sample rate, no filtering)
+          run_scenario "Baseline" \
+          "license_key: \${NEW_RELIC_LICENSE_KEY}
+          enable_process_metrics: true
+          metrics_process_sample_rate: 20
+          collect_process_commandline: false" \
+          "docker-compose.yml:docker-compose.override.yml" \
+          ${DURATION_MINUTES}
+          
+          # Standard scenario (60s sample rate)
+          run_scenario "Standard" \
+          "license_key: \${NEW_RELIC_LICENSE_KEY}
+          enable_process_metrics: true
+          metrics_process_sample_rate: 60
+          collect_process_commandline: false" \
+          "docker-compose.yml:docker-compose.override.yml" \
+          ${DURATION_MINUTES}
+          
+          # Standard with process filtering
+          run_scenario "Filtered" \
+          "license_key: \${NEW_RELIC_LICENSE_KEY}
+          enable_process_metrics: true
+          metrics_process_sample_rate: 60
+          collect_process_commandline: false
+          exclude_matching_metrics:
+            process.name: [\"systemd\"]
+            process.executable: [\"/usr/bin/containerd\", \"/usr/sbin/cron\"]" \
+          "docker-compose.yml:docker-compose.override.yml" \
+          ${DURATION_MINUTES}
+          
+          # Minimal mounts
+          run_scenario "Minimal Mounts" \
+          "license_key: \${NEW_RELIC_LICENSE_KEY}
+          enable_process_metrics: true
+          metrics_process_sample_rate: 60
+          collect_process_commandline: false" \
+          "docker-compose.yml:docker-compose.override.yml:overrides/min-mounts.yml" \
+          ${DURATION_MINUTES}
+          
+          # Docker stats
+          run_scenario "Docker Stats" \
+          "license_key: \${NEW_RELIC_LICENSE_KEY}
+          enable_process_metrics: true
+          metrics_process_sample_rate: 60
+          collect_process_commandline: false" \
+          "docker-compose.yml:docker-compose.override.yml:overrides/docker-stats.yml" \
+          ${DURATION_MINUTES}
+          
+          # Seccomp Off (for comparison)
+          run_scenario "Seccomp Off" \
+          "license_key: \${NEW_RELIC_LICENSE_KEY}
+          enable_process_metrics: true
+          metrics_process_sample_rate: 60
+          collect_process_commandline: false" \
+          "docker-compose.yml:docker-compose.override.yml:overrides/seccomp-disabled.yml" \
+          ${DURATION_MINUTES}
+          
+          # Full optimization (60s + filtering + minimal mounts)
+          run_scenario "Full Optimization" \
+          "license_key: \${NEW_RELIC_LICENSE_KEY}
+          enable_process_metrics: true
+          metrics_process_sample_rate: 60
+          collect_process_commandline: false
+          exclude_matching_metrics:
+            process.name: [\"systemd\"]
+            process.executable: [\"/usr/bin/containerd\", \"/usr/sbin/cron\"]" \
+          "docker-compose.yml:docker-compose.override.yml:overrides/min-mounts.yml" \
+          ${DURATION_MINUTES}
+          
+          # Generate summary report
+          echo "📊 Generating summary report..."
+          
+          cat > "${RESULTS_DIR}/${TIMESTAMP}/summary.md" << EOF_SUMMARY
+          # ProcessSample Comprehensive Test Results
+          
+          **Test run on:** $(date)  
+          **Duration per scenario:** ${DURATION_MINUTES} minutes
+          
+          ## Results Summary
+          
+          | Scenario | ProcessSample Ingest | Reduction |
+          |----------|---------------------|-----------|
+          EOF_SUMMARY
+          
+          # Process result files and add to summary
+          BASELINE_INGEST=""
+          if [[ -f "${RESULTS_DIR}/${TIMESTAMP}/Baseline_results.txt" ]]; then
+            BASELINE_INGEST=$(grep "ProcessSample ingest" "${RESULTS_DIR}/${TIMESTAMP}/Baseline_results.txt" | awk '{print $NF}' || echo "N/A")
+            echo "| Baseline (20s) | ${BASELINE_INGEST:-N/A} | - |" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"
+          fi
+          
+          for SCENARIO in Standard Filtered "Minimal_Mounts" "Docker_Stats" "Seccomp_Off" "Full_Optimization"; do
+            RESULT_FILE="${RESULTS_DIR}/${TIMESTAMP}/${SCENARIO}_results.txt"
+            if [[ -f "${RESULT_FILE}" ]]; then
+              INGEST=$(grep "ProcessSample ingest" "${RESULT_FILE}" | awk '{print $NF}' || echo "N/A")
+              
+              # Calculate reduction if baseline exists
+              REDUCTION="N/A"
+              if [[ -n "${BASELINE_INGEST}" && "${BASELINE_INGEST}" != "N/A" && "${INGEST}" != "N/A" ]]; then
+                REDUCTION=$(echo "scale=2; (1 - ${INGEST}/${BASELINE_INGEST}) * 100" | bc 2>/dev/null || echo "N/A")
+                if [[ "${REDUCTION}" != "N/A" ]]; then
+                  REDUCTION="${REDUCTION}%"
+                fi
+              fi
+              
+              # Replace underscores with spaces for display
+              DISPLAY_NAME="${SCENARIO//_/ }"
+              echo "| ${DISPLAY_NAME} | ${INGEST:-N/A} | ${REDUCTION} |" >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md"
+            fi
+          done
+          
+          # Add analysis section
+          cat >> "${RESULTS_DIR}/${TIMESTAMP}/summary.md" << EOF_ANALYSIS
+          
+          ## Analysis
+          
+          ### Performance Insights
+          
+          - The baseline configuration uses the default 20s sample rate
+          - The standard configuration increases this to 60s (~67% theoretical reduction)
+          - Process filtering offers additional reduction by excluding non-essential processes
+          - The full optimization combines all strategies for maximum cost efficiency
+          
+          ### Security Considerations
+          
+          - Minimal mounts configuration significantly reduces the attack surface
+          - Docker stats adds container metrics but increases security risk due to Docker socket access
+          - Seccomp profiles should be enabled in production for container security
+          
+          ### Recommendations
+          
+          Based on these results, the recommended configuration is:
+          - **Standard with process filtering** for general use cases
+          - **Minimal mounts** for high-security environments
+          - **Full optimization** for maximum cost reduction
+          
+          EOF_ANALYSIS
+          
+          echo "🎉 Comprehensive tests completed! Results in ${RESULTS_DIR}/${TIMESTAMP}/summary.md"
+          EOF
+          
+          chmod +x ./scripts/run_all_scenarios.sh
+      
+      - name: Run all scenarios
+        run: ./scripts/run_all_scenarios.sh ${{ github.event.inputs.duration_minutes || '15' }}
+        env:
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+          NEW_RELIC_API_KEY: ${{ secrets.NEW_RELIC_API_KEY }}
+          NR_ACCOUNT_ID: ${{ secrets.NR_ACCOUNT_ID }}
+      
+      - name: Generate visualization
+        run: |
+          # If python visualization script exists, run it
+          if [[ -f ./scripts/generate_visualization.py ]]; then
+            pip install matplotlib pandas
+            python ./scripts/generate_visualization.py || echo "Visualization generation failed, but continuing"
+          fi
+      
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: scenario-test-results
+          path: ./results/
+          retention-days: 90
+      
+      - name: Update documentation with latest results
+        if: github.event_name == 'schedule'
+        run: |
+          # Find the latest results directory
+          LATEST_RESULTS=$(find ./results -type d -name "[0-9]*_[0-9]*" | sort | tail -n 1)
+          
+          if [[ -n "${LATEST_RESULTS}" && -f "${LATEST_RESULTS}/summary.md" ]]; then
+            # Copy the latest summary to the docs directory
+            cp "${LATEST_RESULTS}/summary.md" ./docs/latest-results.md
+            
+            # Add frontmatter for MkDocs
+            sed -i '1i---' ./docs/latest-results.md
+            sed -i '1i title: Latest Test Results' ./docs/latest-results.md
+            sed -i '1i---' ./docs/latest-results.md
+            
+            # Update the MkDocs configuration to include latest results
+            if ! grep -q "latest-results.md" ./mkdocs.yml; then
+              # Add the page to the navigation using sed
+              sed -i '/Changelog: changelog.md/i \ \ - Latest Results: latest-results.md' ./mkdocs.yml
+            fi
+            
+            # Commit and push the changes
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            git add ./docs/latest-results.md ./mkdocs.yml
+            git commit -m "Update latest test results [skip ci]" || echo "No changes to commit"
+            git push
+          else
+            echo "No test results found to update documentation"
+          fi

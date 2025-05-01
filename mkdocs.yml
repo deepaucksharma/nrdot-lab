@@ -3,6 +3,7 @@ repo_url: https://github.com/deepaucksharma/infra-lab
 docs_dir: docs
 site_url: https://deepaucksharma.github.io/infra-lab/
 nav:
+  - Home: index.md
   - Quick-start: quickstart.md
   - Concepts: concepts.md
   - Scenarios: scenarios.md
@@ -18,10 +19,16 @@ nav:
       - OTel Config: reference/otel-config.md
       - NR Infra Config: reference/newrelic-infra.md
       - NRQL Cheat-sheet: reference/nrql-cheatsheet.md
+  - Latest Results: latest-results.md
   - Changelog: changelog.md
 theme:
   name: material
   features: [navigation.tabs, content.code.copy]
+  palette:
+    primary: indigo
+    accent: indigo
+  icon:
+    repo: fontawesome/brands/github
 markdown_extensions:
   - pymdownx.highlight
   - pymdownx.superfences:
@@ -29,5 +36,20 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.arithmatex:
+      generic: true
   - pymdownx.tabbed
   - pymdownx.snippets
+  - admonition
+  - footnotes
+  - attr_list
+  - def_list
+extra_javascript:
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/deepaucksharma/infra-lab
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/_/newrelic-infrastructure
