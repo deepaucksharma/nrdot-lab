@@ -5,6 +5,8 @@ RUN apt-get update -qq && \
     useradd -u 1000 -m appuser && \
     rm -rf /var/lib/apt/lists/*
 
-USER appuser
 COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+USER appuser
 ENTRYPOINT ["/entrypoint.sh"]

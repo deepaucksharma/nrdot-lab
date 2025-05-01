@@ -24,4 +24,7 @@ jobs:
       - name: Run smoke test
         run: |
           chmod +x ./scripts/ci_smoke.sh
+          chmod +x ./scripts/validate_ingest.sh
+          # Fix permissions for the entrypoint.sh in the container
+          chmod +x ./load-image/entrypoint.sh
           ./scripts/ci_smoke.sh
