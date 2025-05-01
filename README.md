@@ -9,7 +9,6 @@ A containerized lab environment for optimizing New Relic ProcessSample events co
 ## Core Features
 
 - ~70% reduction in ProcessSample ingestion volume
-- Multiple security configurations
 - System-level metrics via OpenTelemetry
 - Cost validation tools
 
@@ -26,7 +25,7 @@ A containerized lab environment for optimizing New Relic ProcessSample events co
 cp .env.example .env
 # Edit .env with your New Relic license key, API key, and account ID
 
-# Start the lab (with minimal filesystem access by default)
+# Start the lab
 make up
 
 # Validate results (after 5 minutes)
@@ -37,18 +36,8 @@ make validate
 
 | Scenario | Command | Purpose |
 |----------|---------|---------|
-| Default (Minimal) | `make up` | Default optimization with minimal mounts |
-| Full Host Access | `make full-host` | Full filesystem access (less secure) |
+| Default | `make up` | Default optimization |
 | Docker Stats | `make docker-stats` | Add container metrics |
-| Seccomp Off | `make seccomp-off` | Disable seccomp for troubleshooting |
-| Enhanced Seccomp | `make seccomp-v2` | Use improved seccomp profile |
-
-## Security Features
-
-- Limited filesystem access by default (only `/proc` and `/sys`)
-- Seccomp profile restricts allowed syscalls
-- Read-only containers with minimal capabilities
-- No hard-coded credentials
 
 ## Requirements
 

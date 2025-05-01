@@ -23,11 +23,10 @@ services:
     tmpfs:
       - /tmp
       - /var/run
-      - /home/appuser
 EOF
 
-echo "Starting containers with seccomp disabled and tmpfs mounts..."
-SECURE_MODE= docker compose --profile default --profile seccomp-off -f docker-compose.yml -f docker-compose.ci.yml up -d
+echo "Starting containers..."
+docker compose --profile default -f docker-compose.yml -f docker-compose.ci.yml up -d
 
 max=60; waited=0
 echo "⏳ waiting up to ${max}s for health..."
@@ -54,10 +53,10 @@ docker compose logs
 # Check for 60s sample rate in configuration
 docker compose exec infra cat /etc/newrelic-infra.yml || true
 
-# Check for sample rate banner - make this optional for now
+# Check for sample rate banner
 docker compose logs infra | grep "Process Sample rate set to 60s" || true
 
-# Check for OTel exporter logs - make this optional for now
+# Check for OTel exporter logs
 docker compose logs otel | grep "Exporting to New Relic" || true
 
 docker compose logs --tail=20 infra otel || true

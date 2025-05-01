@@ -58,5 +58,4 @@ flowchart TD
 | Configuration | Rate | Filtering | Expected Reduction |
 |---------------|------|-----------|-------------------|
 | Standard | 60s | Yes | ~70-75% |
-| Minimal-Mounts | 60s | Yes | ~70-75% |
 | With Container Metrics | 60s | Yes | ~65-70% |
