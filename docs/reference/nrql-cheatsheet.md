@@ -1,5 +1,7 @@
 # NRQL Query Reference
 
+This page contains useful NRQL queries for analyzing ProcessSample data and measuring the effectiveness of optimization strategies.
+
 ## Cost Analysis
 
 ```sql
@@ -51,4 +53,10 @@ SELECT average(commandLine.length) AS 'Avg CmdLine Length'
 FROM ProcessSample 
 FACET processDisplayName 
 LIMIT 20
+```
+
+## Full Query Pack
+
+```sql
+--8<-- "docs/nrql-samples.sql"
 ```

@@ -1,6 +1,14 @@
 # OpenTelemetry Configuration Reference
 
-## Core Configuration
+## Complete Configuration
+
+```yaml
+--8<-- "config/otel-config.yaml"
+```
+
+## Key Components
+
+### Host Metrics Receiver
 
 ```yaml
 receivers:
@@ -13,35 +21,7 @@ receivers:
       filesystem:
       network:
       load:
-
-processors:
-  memory_limiter:
-    check_interval: 1s
-    limit_mib: 400
-  filter/core-metrics:
-    metrics:
-      include:
-        match_type: regexp
-        metric_names: ["^system\\.(cpu|memory|disk|filesystem|network|load)\\..*"]
-  batch: {}
-
-exporters:
-  otlp:
-    endpoint: "otlp.nr-data.net:4317"
-    headers:
-      api-key: "${NEW_RELIC_LICENSE_KEY}"
-
-service:
-  pipelines:
-    metrics:
-      receivers: [hostmetrics]
-      processors: [memory_limiter, filter/core-metrics, batch]
-      exporters: [otlp]
 ```
-
-## Key Components
-
-### Host Metrics Receiver
 
 Collects system metrics at 10-second intervals:
 - CPU usage
@@ -51,9 +31,7 @@ Collects system metrics at 10-second intervals:
 - Network activity
 - System load
 
-### Docker Stats Receiver (Optional)
-
-For container metrics (requires Docker socket access):
+### Docker Stats Receiver
 
 ```yaml
 receivers:
@@ -62,33 +40,25 @@ receivers:
     collection_interval: 10s
 ```
 
-Add to service pipeline:
-```yaml
-service:
-  pipelines:
-    metrics:
-      receivers: [hostmetrics, docker_stats]
-```
+Collects container metrics (requires Docker socket access):
+- Container CPU usage
+- Container memory usage
+- Container network I/O
+- Container block I/O
 
 ## Configuration Options
 
-### Collection Frequency
+### Metrics Filtering
 
 ```yaml
-collection_interval: 10s  # Default: high frequency
-collection_interval: 30s  # Lower frequency, less data
-```
-
-### Metric Filtering
-
-```yaml
-# Include only specific metrics
 filter/core-metrics:
   metrics:
     include:
       match_type: regexp
-      metric_names: ["^system\\.(cpu|memory)\\..*"]
+      metric_names: ["^system\\.(cpu|memory|disk|filesystem|network|load)\\..*"]
 ```
+
+Controls which metrics are collected and sent to New Relic.
 
 ## Common Configurations
 

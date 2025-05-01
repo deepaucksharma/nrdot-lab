@@ -3,10 +3,7 @@
 ## Core Configuration
 
 ```yaml
-license_key: ${NEW_RELIC_LICENSE_KEY}
-enable_process_metrics: true
-metrics_process_sample_rate: 60
-collect_process_commandline: false
+--8<-- "config/newrelic-infra.yml"
 ```
 
 ## Key Settings
