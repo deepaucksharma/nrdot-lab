@@ -6,7 +6,7 @@ x-readonly: &readonly
 
 services:
   infra:
-    image: newrelic/infrastructure:1.64.0
+    image: newrelic/infrastructure:latest
     container_name: nr-infra
     environment:
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY}
@@ -31,7 +31,7 @@ services:
     profiles: ["default", "minimal-mounts", "docker-stats"]
 
   otel:
-    image: otel/opentelemetry-collector-contrib:0.98.0
+    image: otel/opentelemetry-collector-contrib:latest
     container_name: otel-collector
     command: ["--config=/etc/otel-config.yaml"]
     environment:
@@ -58,7 +58,7 @@ services:
     profiles: ["default", "minimal-mounts"]
 
   otel-docker:
-    image: otel/opentelemetry-collector-contrib:0.98.0
+    image: otel/opentelemetry-collector-contrib:latest
     container_name: otel-collector-docker
     command: ["--config=/etc/otel-config.yaml"]
     environment:

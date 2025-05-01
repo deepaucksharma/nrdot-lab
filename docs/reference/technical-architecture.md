@@ -6,7 +6,7 @@ The ProcessSample Optimization Lab consists of three main containerized componen
 
 ### 1. Infrastructure Agent (infra)
 
-- **Image**: newrelic/infrastructure:1.28.0
+- **Image**: newrelic/infrastructure:latest
 - **Purpose**: Collects ProcessSample events and system metrics
 - **Key Configurations**:
   - 60s sample rate (vs. default 20s)
@@ -15,7 +15,7 @@ The ProcessSample Optimization Lab consists of three main containerized componen
 
 ### 2. OpenTelemetry Collector (otel)
 
-- **Image**: otel/opentelemetry-collector-contrib:0.57.2
+- **Image**: otel/opentelemetry-collector-contrib:latest
 - **Purpose**: Collects system metrics via hostmetrics receiver
 - **Key Configurations**:
   - 10s collection interval for high-frequency metrics
@@ -153,6 +153,7 @@ Key environment variables used by the lab:
 | NR_ACCOUNT_ID | Account identifier for API calls | For validation only |
 | STRESS_CPU | CPU load level for test generator | No (default: 2) |
 | STRESS_MEM | Memory usage for test generator | No (default: 128M) |
+| SECURE_MODE | Toggle seccomp security profile | No (default: true) |
 
 ## Future Architecture Components
 
