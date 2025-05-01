@@ -1,5 +1,10 @@
 # Changelog
 
-This file is a copy of the main CHANGELOG.md in the project root.
+The ProcessSample Optimization Lab includes the following capabilities:
 
---8<-- "CHANGELOG.md"
+- ProcessSample optimization with 60-second interval
+- OpenTelemetry integration for system metrics
+- Synthetic load generator
+- Validation scripts
+- Multiple security profiles
+- Docker stats collection capabilities

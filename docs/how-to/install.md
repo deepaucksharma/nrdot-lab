@@ -1,149 +1,66 @@
-# Installation & Running
-
-This guide provides detailed instructions for installing and running the ProcessSample Optimization Lab.
+# Installation Guide
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
-
-- **Docker**: Version 20.10.0 or higher
-- **Docker Compose**: Version 2.0.0 or higher
-- **jq**: Required for the validation script
-- **New Relic account** with:
-  - License key (for sending data)
-  - User API key (for validation)
-  - Account ID
+- Docker 20.10.0+
+- Docker Compose 2.0.0+
+- jq (for validation)
+- New Relic account (license key, API key, account ID)
 
 ## Installation Steps
 
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/your-org/deepaucksharma-infra-lab.git
-cd deepaucksharma-infra-lab
-```
-
-### 2. Configure Environment Variables
-
-Create and configure your environment file:
+### 1. Configure Environment
 
 ```bash
 cp .env.example .env
 ```
 
-Edit the `.env` file with your New Relic credentials:
+Edit `.env` with your credentials:
 
 ```ini
-NEW_RELIC_LICENSE_KEY=your_license_key_here
-NEW_RELIC_API_KEY=your_user_api_key_here
-NR_ACCOUNT_ID=your_account_id_here
+NEW_RELIC_LICENSE_KEY=your_license_key
+NEW_RELIC_API_KEY=your_user_api_key
+NR_ACCOUNT_ID=your_account_id
 ```
 
-### 3. Review Configuration (Optional)
+### 2. Start the Lab
 
-Before running, you can review the default configurations:
-
-- **Infrastructure Agent**: `config/newrelic-infra.yml`
-- **OpenTelemetry Collector**: `config/otel-config.yaml`
-- **Docker Compose**: `docker-compose.yml`
-
-## Running the Lab
-
-### Standard Configuration
-
-To run the lab with the default configuration:
+Standard configuration:
 
 ```bash
 make up
 ```
 
-This will:
-1. Build and start all containers
-2. Configure the Infrastructure Agent with 60s sampling
-3. Configure the OpenTelemetry Collector for hostmetrics
-4. Start the synthetic load generator
-
-### Alternative Configurations
-
-#### Minimal Mounts Configuration
-
-For enhanced security with limited filesystem access:
+Alternative configurations:
 
 ```bash
+# Enhanced security
 COMPOSE_FILE=docker-compose.yml:overrides/min-mounts.yml make up
-```
 
-#### Seccomp Disabled (Troubleshooting)
+# Container metrics
+COMPOSE_FILE=docker-compose.yml:overrides/docker-stats.yml make up
 
-If you encounter security-related issues:
-
-```bash
+# Troubleshooting
 COMPOSE_FILE=docker-compose.yml:overrides/seccomp-disabled.yml make up
 ```
 
-#### Docker Stats Collection
+### 3. Monitor & Validate
 
-To add container metrics collection:
-
-```bash
-COMPOSE_FILE=docker-compose.yml:overrides/docker-stats.yml make up
-```
-
-## Monitoring the Lab
-
-### View Container Logs
-
-To monitor the containers in real-time:
+View logs:
 
 ```bash
 make logs
 ```
 
-To follow only a specific container:
-
-```bash
-docker logs -f process_infra_1
-```
-
-### Verify Data Ingestion
-
-After running for at least 5 minutes, verify data is flowing to New Relic:
+Validate results (after 5+ minutes):
 
 ```bash
 make validate
 ```
 
-You should see output similar to:
-
-```
-Calculating ProcessSample ingest volume...
-Querying New Relic API for the last 30 minutes...
-
-RESULTS:
---------------------------
-ProcessSample Events: 1245
-Estimated GB/day: 0.15
-Estimated GB/month: 4.5
-Reduction vs baseline: 73%
---------------------------
-```
-
-## Stopping the Lab
-
-To stop and remove the containers:
+### 4. Stopping the Lab
 
 ```bash
-make down
+make down    # Stop containers
+make clean   # Remove containers and volumes
 ```
-
-To completely clean up all resources, including volumes:
-
-```bash
-make clean
-```
-
-## Next Steps
-
-- Learn how to [validate costs](validate.md) in detail
-- Explore [troubleshooting](troubleshoot.md) common issues
-- See how to [extend the lab](extend.md) with custom configurations

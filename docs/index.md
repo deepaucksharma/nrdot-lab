@@ -1,88 +1,54 @@
-# New Relic ProcessSample Optimization Lab
+# ProcessSample Optimization Lab
 
-Welcome to the ProcessSample Optimization Lab documentation. This lab provides a containerized environment for optimizing New Relic ProcessSample events cost without sacrificing observability.
+A containerized environment that reduces New Relic ProcessSample ingest by 70% without sacrificing observability.
 
-## 🎯 What This Lab Demonstrates
+## Core Strategies
 
-This lab demonstrates how to achieve approximately **70% reduction in ProcessSample ingestion volume** through a combination of:
-- Sample rate optimization
-- Process filtering
-- Alternative metrics sources via OpenTelemetry
+| Strategy | Approach | Reduction |
+|----------|----------|-----------|
+| **Sample Rate** | 60s interval (vs 20s default) | ~67% |
+| **Process Filtering** | Exclude non-essential processes | ~5-10% |
+| **OpenTelemetry** | System metrics at 10s intervals | Preserves visibility |
 
-## 📊 Optimization Strategies
+## Quick Start
 
-| Strategy | Approach | Estimated Reduction |
-|----------|----------|---------------------|
-| **Sample Rate Throttling** | Increase interval from 20s to 60s | ~67% |
-| **Process Filtering** | Exclude non-essential processes | ~5-10% additional |
-| **OpenTelemetry Metrics** | Alternative system metrics at 10s intervals | Preserves visibility |
+```bash
+# Configure credentials
+cp .env.example .env
+# Edit with your NR license key, API key, and account ID
 
-## 🚀 Getting Started
+# Start the lab
+make up
 
-New to the lab? Follow these steps:
+# Check results (after 5 minutes)
+make validate
+```
 
-1. [**Quick-start Guide**](quickstart.md) - Get up and running in minutes
-2. [**Installation Guide**](how-to/install.md) - Detailed installation instructions
-3. [**Validation Guide**](how-to/validate.md) - Verify your optimization results
+## Scenarios
 
-## 🧪 Lab Scenarios
+| Scenario | Command | Use Case |
+|----------|---------|----------|
+| **Standard** | `make up` | General optimization |
+| **Minimal-Mounts** | `COMPOSE_FILE=docker-compose.yml:overrides/min-mounts.yml make up` | Enhanced security |
+| **Docker-Stats** | `COMPOSE_FILE=docker-compose.yml:overrides/docker-stats.yml make up` | Container metrics |
+| **Seccomp-Off** | `COMPOSE_FILE=docker-compose.yml:overrides/seccomp-disabled.yml make up` | Troubleshooting |
 
-The lab includes several pre-configured scenarios to explore different optimization approaches:
+## Documentation Map
 
-| Scenario | Description | Security | Documentation |
-|----------|-------------|----------|--------------|
-| **Standard** | 60s sampling, default settings | Normal | [Details](scenarios.md#standard-scenario) |
-| **Minimal-Mounts** | Restricted filesystem access | Enhanced | [Details](scenarios.md#minimal-mounts-scenario) |
-| **Docker Stats** | Container metrics integration | Reduced | [Details](scenarios.md#docker-stats-scenario) |
-| **Seccomp Off** | For troubleshooting | Debug Only | [Details](scenarios.md#seccomp-off-scenario) |
-
-## 📚 Documentation Structure
-
-This documentation is organized into these main sections:
-
-- **[Concepts](concepts.md)** - Core theory and optimization principles
-- **[Scenarios](scenarios.md)** - Pre-configured test scenarios
-- **How-to Guides** - Step-by-step instructions
+- [Optimization Concepts](concepts.md)
+- [Scenario Details](scenarios.md)
+- **How-to Guides**
   - [Installation](how-to/install.md)
   - [Validation](how-to/validate.md)
-  - [Extension](how-to/extend.md)
   - [Troubleshooting](how-to/troubleshoot.md)
-- **Reference** - Technical references
-  - [Infrastructure Agent Configuration](reference/newrelic-infra.md)
+  - [Customization](how-to/extend.md)
+- **Reference**
+  - [Infrastructure Configuration](reference/newrelic-infra.md)
   - [OpenTelemetry Configuration](reference/otel-config.md)
-  - [NRQL Cheatsheet](reference/nrql-cheatsheet.md)
-- **Automation**
-  - [GitHub Actions](automation/github-actions.md)
-  - [Local Scripts](automation/scripts.md)
+  - [NRQL Queries](reference/nrql-cheatsheet.md)
 
-## 🔬 Test Results
+## Prerequisites
 
-The lab includes automated testing of all scenarios to provide empirical evidence of optimization effectiveness:
-
-- [**Latest Test Results**](latest-results.md) - Most recent automated test run
-- Regular tests are scheduled weekly via [GitHub Actions](automation/github-actions.md)
-
-## 💡 Optimization Best Practices
-
-For best results, consider these recommendations:
-
-1. **Start with sample rate adjustment** (60s) for immediate gains
-2. **Add process filtering** to exclude non-essential processes
-3. **Use OpenTelemetry hostmetrics** for high-frequency system visibility
-4. **Validate your results** to confirm actual reduction
-
-## 🔄 Recent Updates
-
-See the [Changelog](changelog.md) for the latest updates and improvements.
-
-## 🛡️ Security Considerations
-
-The lab includes several security-focused configurations:
-
-- **Seccomp profiles** to restrict container syscalls
-- **Minimal-mounts mode** for reduced filesystem access
-- **Read-only mounts** to prevent filesystem modifications
-
-## 🤝 Contributing
-
-Contributions to this lab are welcome! See our [GitHub repository](https://github.com/deepaucksharma/infra-lab) for more information on how to contribute.
+- Docker and Docker Compose
+- `jq` (for validation)
+- New Relic account with license key, API key, and account ID

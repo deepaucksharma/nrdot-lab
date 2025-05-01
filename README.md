@@ -6,26 +6,22 @@
 
 A containerized lab environment for optimizing New Relic ProcessSample events cost without sacrificing observability.
 
-## 🚀 Key Features
+## Core Features
 
-- Achieve ~70% reduction in ProcessSample ingestion volume
-- Multiple security posture configurations
-- Complete metrics visibility using OpenTelemetry
-- Validation scripts to measure real cost savings
+- ~70% reduction in ProcessSample ingestion volume
+- Multiple security configurations
+- System-level metrics via OpenTelemetry
+- Cost validation tools
 
-## 📊 Core Optimization Strategies
+## Optimization Strategies
 
-1. **Throttled Sample Rate**: 60s interval instead of 20s (~67% reduction)
-2. **Process Filtering**: Exclude non-essential process metrics (~5-10% additional reduction)
-3. **OpenTelemetry Hostmetrics**: Alternative system-level metrics at 10s intervals
+1. **Sample Rate**: 60s interval (vs 20s default)
+2. **Process Filtering**: Exclude non-essential processes
+3. **OTel Metrics**: High-frequency system metrics
 
-## 🏁 Quick Start
+## Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/deepaucksharma/infra-lab.git
-cd infra-lab
-
 # Configure credentials
 cp .env.example .env
 # Edit .env with your New Relic license key, API key, and account ID
@@ -33,44 +29,25 @@ cp .env.example .env
 # Start the lab
 make up
 
-# Check ingestion statistics (after a few minutes)
+# Validate results (after 5 minutes)
 make validate
 ```
 
-## 📘 Documentation
+## Available Scenarios
 
-[**View the complete documentation**](https://deepaucksharma.github.io/infra-lab/)
+| Scenario | Command | Purpose |
+|----------|---------|---------|
+| Standard | `make up` | Default optimization |
+| Minimal-Mounts | `COMPOSE_FILE=docker-compose.yml:overrides/min-mounts.yml make up` | Enhanced security |
+| Docker-Stats | `COMPOSE_FILE=docker-compose.yml:overrides/docker-stats.yml make up` | Container metrics |
+| Seccomp-Off | `COMPOSE_FILE=docker-compose.yml:overrides/seccomp-disabled.yml make up` | Troubleshooting |
 
-The documentation includes:
-
-- [Quick-start guide](https://deepaucksharma.github.io/infra-lab/quickstart/)
-- [Concepts and theory](https://deepaucksharma.github.io/infra-lab/concepts/)
-- [Detailed scenarios](https://deepaucksharma.github.io/infra-lab/scenarios/)
-- [How-to guides](https://deepaucksharma.github.io/infra-lab/how-to/install/)
-- [Troubleshooting](https://deepaucksharma.github.io/infra-lab/how-to/troubleshoot/)
-- [NRQL reference](https://deepaucksharma.github.io/infra-lab/reference/nrql-cheatsheet/)
-
-## 🛡️ Security Postures
-
-The lab supports multiple security configurations:
-
-| Configuration | Command | Security Level |
-|---------------|---------|--------------|
-| Standard | `make up` | 🔒 Normal |
-| Minimal Mounts | `COMPOSE_FILE=docker-compose.yml:overrides/min-mounts.yml make up` | 🔒🔒 Highest |
-| Docker Stats | `COMPOSE_FILE=docker-compose.yml:overrides/docker-stats.yml make up` | 🔓 Reduced (Docker socket access) |
-| Seccomp Off | `COMPOSE_FILE=docker-compose.yml:overrides/seccomp-disabled.yml make up` | ⚠️ For debugging only |
-
-## 📋 Prerequisites
+## Requirements
 
 - Docker and Docker Compose
-- `jq` (for validation scripts)
-- New Relic account with license key, user API key, and account ID
+- `jq` for validation
+- New Relic account with license key, API key, and account ID
 
-## 📦 Recent Updates
+## Documentation
 
-- Added Docker stats collection capability
-- Enhanced documentation with MkDocs Material theme
-- Improved process filtering configuration
-
-For the complete change history, see the [Changelog](https://deepaucksharma.github.io/infra-lab/changelog/)
+[View the complete documentation](https://deepaucksharma.github.io/infra-lab/)
