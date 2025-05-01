@@ -1,0 +1,33 @@
+site_name: ProcessSample Lab
+repo_url: https://github.com/deepaucksharma/InfraGuide
+docs_dir: docs
+site_url: https://deepaucksharma.github.io/InfraGuide/
+nav:
+  - Quick-start: quickstart.md
+  - Concepts: concepts.md
+  - Scenarios: scenarios.md
+  - How-to:
+      - Install & Run: how-to/install.md
+      - Validate Costs: how-to/validate.md
+      - Extend Lab: how-to/extend.md
+      - Troubleshoot: how-to/troubleshoot.md
+  - Automation:
+      - GitHub Actions: automation/github-actions.md
+      - Local Scripts: automation/scripts.md
+  - Reference:
+      - OTel Config: reference/otel-config.md
+      - NR Infra Config: reference/newrelic-infra.md
+      - NRQL Cheat-sheet: reference/nrql-cheatsheet.md
+  - Changelog: changelog.md
+theme:
+  name: material
+  features: [navigation.tabs, content.code.copy]
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed
+  - pymdownx.snippets
