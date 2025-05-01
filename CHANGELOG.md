@@ -1,16 +1,13 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to the New Relic ProcessSample Optimization Lab will be documented in this file.
 
-## [v11.0.0] – 2025-05-05
-* Fixed Compose seccomp interpolation with overrides.
-* Added documentation for full-host mount risks.
-* Ensured seccomp profile allows all necessary syscalls.
-* Provided guidance for re-enabling `docker_stats`.
-* Added `strace` to `load-image` for debugging.
+## [Unreleased]
+- No unreleased changes currently
 
-## [v10.0.0] – 2025-04-15
-* Initial release with basic functionality.
-* Added New Relic Infrastructure and OTel integration.
-* Implemented synthetic load generation.
-* Created validation and smoke test scripts.
+## [1.0.0] - Initial Release
+- ProcessSample optimization configuration with 60-second interval
+- OpenTelemetry integration for system metrics
+- Synthetic load generator
+- Validation and testing scripts
+- Security profiles and container hardening
