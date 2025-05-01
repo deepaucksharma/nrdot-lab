@@ -1,7 +1,7 @@
 # New Relic ProcessSample Optimization Lab
 
-[![Documentation](https://img.shields.io/badge/docs-online-brightgreen)](https://deepaucksharma.github.io/InfraGuide/)
-[![CI Status](https://img.shields.io/github/actions/workflow/status/deepaucksharma/InfraGuide/ci.yml?branch=master&label=ci)](https://github.com/deepaucksharma/InfraGuide/actions)
+[![Documentation](https://img.shields.io/badge/docs-online-brightgreen)](https://deepaucksharma.github.io/infra-lab/)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/deepaucksharma/infra-lab/ci.yml?branch=master&label=ci)](https://github.com/deepaucksharma/infra-lab/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 A containerized lab environment for optimizing New Relic ProcessSample events cost without sacrificing observability.
@@ -23,8 +23,8 @@ A containerized lab environment for optimizing New Relic ProcessSample events co
 
 ```bash
 # Clone the repository
-git clone https://github.com/deepaucksharma/InfraGuide.git
-cd InfraGuide
+git clone https://github.com/deepaucksharma/infra-lab.git
+cd infra-lab
 
 # Configure credentials
 cp .env.example .env
@@ -39,16 +39,16 @@ make validate
 
 ## 📘 Documentation
 
-[**View the complete documentation**](https://deepaucksharma.github.io/InfraGuide/)
+[**View the complete documentation**](https://deepaucksharma.github.io/infra-lab/)
 
 The documentation includes:
 
-- [Quick-start guide](https://deepaucksharma.github.io/InfraGuide/quickstart/)
-- [Concepts and theory](https://deepaucksharma.github.io/InfraGuide/concepts/)
-- [Detailed scenarios](https://deepaucksharma.github.io/InfraGuide/scenarios/)
-- [How-to guides](https://deepaucksharma.github.io/InfraGuide/how-to/install/)
-- [Troubleshooting](https://deepaucksharma.github.io/InfraGuide/how-to/troubleshoot/)
-- [NRQL reference](https://deepaucksharma.github.io/InfraGuide/reference/nrql-cheatsheet/)
+- [Quick-start guide](https://deepaucksharma.github.io/infra-lab/quickstart/)
+- [Concepts and theory](https://deepaucksharma.github.io/infra-lab/concepts/)
+- [Detailed scenarios](https://deepaucksharma.github.io/infra-lab/scenarios/)
+- [How-to guides](https://deepaucksharma.github.io/infra-lab/how-to/install/)
+- [Troubleshooting](https://deepaucksharma.github.io/infra-lab/how-to/troubleshoot/)
+- [NRQL reference](https://deepaucksharma.github.io/infra-lab/reference/nrql-cheatsheet/)
 
 ## 🛡️ Security Postures
 
@@ -73,4 +73,4 @@ The lab supports multiple security configurations:
 - Enhanced documentation with MkDocs Material theme
 - Improved process filtering configuration
 
-For the complete change history, see the [Changelog](https://deepaucksharma.github.io/InfraGuide/changelog/)
+For the complete change history, see the [Changelog](https://deepaucksharma.github.io/infra-lab/changelog/)

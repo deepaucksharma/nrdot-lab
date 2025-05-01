@@ -1,5 +1,5 @@
 site_name: ProcessSample Lab
-repo_url: https://github.com/deepaucksharma/InfraGuide
+repo_url: https://github.com/deepaucksharma/infra-lab
 nav:
   - Quick-start: quickstart.md
   - Concepts: concepts.md
