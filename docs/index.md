@@ -13,9 +13,9 @@ This lab demonstrates how to achieve approximately **70% reduction in ProcessSam
 
 | Strategy | Approach | Estimated Reduction |
 |----------|----------|---------------------|
-| [**Sample Rate Throttling**](concepts.md#sample-rate-throttling) | Increase interval from 20s to 60s | ~67% |
-| [**Process Filtering**](concepts.md#process-filtering) | Exclude non-essential processes | ~5-10% additional |
-| [**OpenTelemetry Metrics**](concepts.md#opentelemetry-metrics) | Alternative system metrics at 10s intervals | Preserves visibility |
+| **Sample Rate Throttling** | Increase interval from 20s to 60s | ~67% |
+| **Process Filtering** | Exclude non-essential processes | ~5-10% additional |
+| **OpenTelemetry Metrics** | Alternative system metrics at 10s intervals | Preserves visibility |
 
 ## 🚀 Getting Started
 

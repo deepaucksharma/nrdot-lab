@@ -20,6 +20,9 @@ nav:
       - NR Infra Config: reference/newrelic-infra.md
       - NRQL Cheat-sheet: reference/nrql-cheatsheet.md
   - Latest Results: latest-results.md
+  - Legacy Docs:
+      - Lab Guide: lab-guide.md
+      - Windows Guide: windows-guide.md
   - Changelog: changelog.md
 theme:
   name: material

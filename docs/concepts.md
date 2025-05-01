@@ -43,7 +43,7 @@ $$
 
 The lab implements three core optimization strategies:
 
-### 1. Throttled Sample Rate
+### Sample Rate Throttling
 
 By increasing the interval from 20s to 60s, we achieve approximately 67% reduction in event volume:
 
@@ -54,7 +54,7 @@ metrics_process_sample_rate: 60
 
 This provides the largest optimization benefit with minimal observability impact.
 
-### 2. Process Filtering
+### Process Filtering
 
 By excluding non-essential processes, we can achieve an additional 5-10% reduction:
 
@@ -66,7 +66,7 @@ exclude_matching_metrics:
 
 This focuses monitoring on critical processes and reduces "noise" from system processes.
 
-### 3. OpenTelemetry Hostmetrics
+### OpenTelemetry Metrics
 
 By complementing ProcessSample data with OpenTelemetry hostmetrics, we maintain high-frequency visibility into system resources:
 

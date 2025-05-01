@@ -2,7 +2,7 @@
 
 The ProcessSample Optimization Lab supports multiple configurations for different requirements. Each scenario demonstrates specific optimization techniques and security considerations.
 
-## 1. Standard Lab (Default)
+## Standard Scenario
 
 **Use case**: General cost optimization with balanced security
 
@@ -46,7 +46,7 @@ Reduction vs baseline: 73%
 --------------------------
 ```
 
-## 2. Minimal-Mounts Mode
+## Minimal-Mounts Scenario
 
 **Use case**: High-security environments with limited filesystem access requirements
 
@@ -66,7 +66,7 @@ COMPOSE_FILE=docker-compose.yml:overrides/min-mounts.yml make up
 - Reduced privilege escalation risk
 - Compliant with strict security policies
 
-## 3. Seccomp-Off Troubleshooting
+## Seccomp-Off Scenario
 
 **Use case**: Debugging seccomp-related issues or testing new agent features
 
@@ -84,7 +84,7 @@ COMPOSE_FILE=docker-compose.yml:overrides/seccomp-disabled.yml make up
 **Security note**:
 Only use temporarily for debugging, then return to a secured configuration.
 
-## 4. Container Metrics (docker_stats)
+## Docker-Stats Scenario
 
 **Use case**: When detailed container-level metrics are required
 
@@ -105,7 +105,7 @@ COMPOSE_FILE=docker-compose.yml:overrides/docker-stats.yml make up
 - Significantly increases the attack surface
 - Use only when container metrics are essential
 
-## 5. Baseline Measurement
+## Baseline Scenario
 
 **Use case**: Establishing a baseline for comparison or cost justification
 
@@ -137,13 +137,13 @@ COMPOSE_FILE=docker-compose.yml:overrides/docker-stats.yml make up
 | Standard | 60s | Yes | Enabled | No | Full host |
 | Minimal-Mounts | 60s | Yes | Enabled | No | Limited to /proc, /sys |
 | Seccomp-Off | 60s | Yes | Disabled | No | Full host |
-| Container Metrics | 60s | Yes | Enabled | Yes | Full host |
+| Docker-Stats | 60s | Yes | Enabled | Yes | Full host |
 | Baseline | 20s | No | Enabled | No | Full host |
 
 ## Choosing the Right Scenario
 
-1. **Starting point**: Begin with the Standard Lab to understand the basic optimization techniques
-2. **Production use**: Consider Minimal-Mounts for production environments with strict security requirements
-3. **Troubleshooting**: Use Seccomp-Off temporarily if you encounter security-related issues
-4. **Container monitoring**: Add docker_stats only when container-specific metrics are required
-5. **Cost justification**: Run Baseline measurements to demonstrate the value of optimization
+1. **Starting point**: Begin with the Standard Scenario to understand the basic optimization techniques
+2. **Production use**: Consider Minimal-Mounts Scenario for production environments with strict security requirements
+3. **Troubleshooting**: Use Seccomp-Off Scenario temporarily if you encounter security-related issues
+4. **Container monitoring**: Add Docker-Stats Scenario only when container-specific metrics are required
+5. **Cost justification**: Run Baseline Scenario measurements to demonstrate the value of optimization
