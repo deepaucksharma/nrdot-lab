@@ -51,7 +51,7 @@ dev = [
 dir = "src/process_lab"
 
 [project.scripts]
-process-lab = "src.process_lab.cli:app"
+process-lab = "process_lab.cli:app"
 
 [tool.ruff]
 line-length = 100

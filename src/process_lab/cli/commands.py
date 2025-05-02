@@ -41,7 +41,7 @@ def get_api_key() -> Optional[str]:
 
 
 def wizard_command(
-    output: Path = typer.Option("./config/newrelic-infra.yml", "--output", "-o", help="Output path for generated YAML"),
+    output: Path = typer.Option("./newrelic-infra.yml", "--output", "-o", help="Output path for generated YAML"),
     api_key: Optional[str] = typer.Option(None, "--api-key", "-k", help="New Relic API key (optional)"),
     skip_cost: bool = typer.Option(False, "--skip-cost", help="Skip cost estimation"),
     preset: Optional[str] = typer.Option(None, "--preset", "-p", help="Use a preset configuration"),
@@ -171,7 +171,7 @@ def generate_config_command(
     preset: Optional[str] = typer.Option(None, "--preset", "-p", help="Template preset name"),
     collect_cmdline: bool = typer.Option(False, "--collect-cmdline", "-c", help="Collect command line arguments"),
     log_file: Optional[str] = typer.Option(None, "--log-file", "-l", help="Log file path"),
-    output: Path = typer.Option("./config/newrelic-infra.yml", "--output", "-o", help="Output path for generated YAML"),
+    output: Path = typer.Option("./newrelic-infra.yml", "--output", "-o", help="Output path for generated YAML"),
 ) -> None:
     """
     Non-interactive configuration generator.
