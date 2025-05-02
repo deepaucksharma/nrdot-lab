@@ -41,6 +41,7 @@ dev = [
 [project.scripts]
 zcp = "zcp_cli.main:cli"
 zcp-simple = "zcp_cli.simple_cli:cli"
+zcp-config = "zcp_cli.config_only_cli:cli"
 
 [tool.hatch.version]
 path = "src/zcp_core/__init__.py"

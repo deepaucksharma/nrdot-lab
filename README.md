@@ -12,21 +12,33 @@ ZCP is a toolkit for configuring, deploying, and managing process monitoring age
 - **Linting**: Check configurations for common issues and best practices.
 - **Structured Logging**: Consistent logging with context and OpenTelemetry support.
 
-## Streamlined Version
+## Available Implementations
 
-A streamlined version with simplified architecture is available. It provides the same core workflow with:
+### 1. Full Version (Original)
 
-- Less complexity and better maintainability
-- Fewer dependencies and simpler code paths
-- Easier to understand for new developers
+The complete implementation with all features and components. Best for production use with large fleets.
 
-Try it with:
+### 2. Streamlined Version
+
+A streamlined version with simplified architecture that provides the same core workflow with less complexity:
 
 ```bash
 python zcp_simple.py wizard --preset java_heavy --host-count 10
 ```
 
 See [STREAMLINED.md](STREAMLINED.md) for details.
+
+### 3. Configuration-Only Version
+
+An extremely minimal version that focuses solely on configuration generation and cost estimation:
+
+```bash
+python zcp_config_only.py wizard --preset java_heavy --host-count 10
+```
+
+This version removes linting, rollout, and validation functionality for maximum simplicity.
+
+See [CONFIG_ONLY.md](CONFIG_ONLY.md) for details.
 
 ## Architecture
 
