@@ -20,6 +20,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from zcp_core.compat import get_or_create_loop
+
 logger = logging.getLogger(__name__)
 
 class Event(BaseModel):
@@ -50,6 +52,10 @@ class BusBackend(Protocol):
     def subscribe(self, handler: Subscriber) -> None:
         """Register a subscriber."""
         ...
+        
+    def unsubscribe(self, handler: Subscriber) -> None:
+        """Remove a subscriber."""
+        ...
     
     def shutdown(self) -> None:
         """Clean shutdown of the bus."""
@@ -60,20 +66,33 @@ class SyncMemBackend:
     
     def __init__(self):
         self._subscribers: List[Subscriber] = []
-        self._loop = asyncio.get_event_loop()
+        self._loop = get_or_create_loop()
     
-    def publish(self, event: Event) -> None:
+    async def publish(self, event: Event) -> None:
         """Publish event to all matching subscribers synchronously."""
+        tasks = []
+        
         for sub in self._subscribers:
             if isinstance(sub.topic, str):
                 if sub.topic == event.topic or sub.topic.endswith('*') and event.topic.startswith(sub.topic[:-1]):
-                    self._loop.create_task(sub.handle(event))
+                    task = self._loop.create_task(sub.handle(event))
+                    tasks.append(task)
             elif isinstance(sub.topic, Pattern) and sub.topic.match(event.topic):
-                self._loop.create_task(sub.handle(event))
+                task = self._loop.create_task(sub.handle(event))
+                tasks.append(task)
+                
+        # Await all tasks to ensure they complete
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
     
     def subscribe(self, handler: Subscriber) -> None:
         """Register a subscriber."""
         self._subscribers.append(handler)
+        
+    def unsubscribe(self, handler: Subscriber) -> None:
+        """Remove a subscriber."""
+        if handler in self._subscribers:
+            self._subscribers.remove(handler)
     
     def shutdown(self) -> None:
         """Clean shutdown - no-op for sync backend."""
@@ -87,16 +106,22 @@ class AsyncQueueBackend:
         self._queues: Dict[Subscriber, asyncio.Queue] = {}
         self._max_queue_size = max_queue_size
         self._tasks: Set[asyncio.Task] = set()
-        self._loop = asyncio.get_event_loop()
+        self._loop = get_or_create_loop()
         
     def publish(self, event: Event) -> None:
         """Queue event for asynchronous delivery."""
         for sub in self._subscribers:
             if isinstance(sub.topic, str):
                 if sub.topic == event.topic or sub.topic.endswith('*') and event.topic.startswith(sub.topic[:-1]):
-                    self._ensure_queue(sub).put_nowait(event)
+                    try:
+                        self._ensure_queue(sub).put_nowait(event)
+                    except asyncio.QueueFull:
+                        logger.error(f"Queue full for subscriber handling {event.topic} - event dropped")
             elif isinstance(sub.topic, Pattern) and sub.topic.match(event.topic):
-                self._ensure_queue(sub).put_nowait(event)
+                try:
+                    self._ensure_queue(sub).put_nowait(event)
+                except asyncio.QueueFull:
+                    logger.error(f"Queue full for subscriber handling {event.topic} - event dropped")
                 
     def _ensure_queue(self, sub: Subscriber) -> asyncio.Queue:
         """Create queue for subscriber if it doesn't exist."""
@@ -122,6 +147,22 @@ class AsyncQueueBackend:
     def subscribe(self, handler: Subscriber) -> None:
         """Register a subscriber."""
         self._subscribers.append(handler)
+    
+    def unsubscribe(self, handler: Subscriber) -> None:
+        """Remove a subscriber and clean up its queue."""
+        if handler in self._subscribers:
+            self._subscribers.remove(handler)
+            
+            # Clean up the queue if it exists
+            if handler in self._queues:
+                # Find the task processing this queue
+                for task in self._tasks:
+                    if task.get_name() == f"process_queue_{id(handler)}":
+                        task.cancel()
+                        break
+                        
+                # Remove the queue
+                del self._queues[handler]
         
     def shutdown(self) -> None:
         """Clean shutdown, cancels all tasks."""
@@ -134,9 +175,9 @@ class FileTraceBackend:
     def __init__(self, path: Optional[str] = None):
         self._path = path or os.environ.get("ZCP_TRACE_PATH", "zcp_events.jsonl")
         self._subscribers: List[Subscriber] = []
-        self._loop = asyncio.get_event_loop()
+        self._loop = get_or_create_loop()
         
-    def publish(self, event: Event) -> None:
+    async def publish(self, event: Event) -> None:
         """Log event to file and deliver to subscribers."""
         # Write to trace file
         with open(self._path, "a") as f:
@@ -148,16 +189,28 @@ class FileTraceBackend:
             }) + "\n")
             
         # Also deliver to subscribers for live processing
+        tasks = []
         for sub in self._subscribers:
             if isinstance(sub.topic, str):
                 if sub.topic == event.topic or sub.topic.endswith('*') and event.topic.startswith(sub.topic[:-1]):
-                    self._loop.create_task(sub.handle(event))
+                    task = self._loop.create_task(sub.handle(event))
+                    tasks.append(task)
             elif isinstance(sub.topic, Pattern) and sub.topic.match(event.topic):
-                self._loop.create_task(sub.handle(event))
+                task = self._loop.create_task(sub.handle(event))
+                tasks.append(task)
+                
+        # Await all tasks to ensure they complete
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
     
     def subscribe(self, handler: Subscriber) -> None:
         """Register a subscriber."""
         self._subscribers.append(handler)
+        
+    def unsubscribe(self, handler: Subscriber) -> None:
+        """Remove a subscriber."""
+        if handler in self._subscribers:
+            self._subscribers.remove(handler)
         
     def shutdown(self) -> None:
         """Clean shutdown - no-op for file backend."""
@@ -185,13 +238,47 @@ def _get_backend() -> BusBackend:
             _backend = SyncMemBackend()
     return _backend
 
-def publish(event: Event) -> None:
+async def publish(event: Event) -> None:
     """Publish an event to the bus."""
-    _get_backend().publish(event)
+    backend = _get_backend()
+    # Check if the backend's publish method is a coroutine function
+    if asyncio.iscoroutinefunction(backend.publish):
+        await backend.publish(event)
+    else:
+        backend.publish(event)
+
+def publish_sync(event: Event) -> None:
+    """
+    Synchronous wrapper for publish.
+    Use this in synchronous code contexts where awaiting is not possible.
+    """
+    backend = _get_backend()
+    if asyncio.iscoroutinefunction(backend.publish):
+        # Create a new event loop if needed
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(backend.publish(event))
+        else:
+            if loop.is_running():
+                # Schedule it as a task if loop is running
+                loop.create_task(backend.publish(event))
+            else:
+                # Run until complete if loop exists but not running
+                loop.run_until_complete(backend.publish(event))
+    else:
+        # Just call the sync version directly
+        backend.publish(event)
 
 def subscribe(handler: Subscriber) -> None:
     """Register a subscriber with the bus."""
     _get_backend().subscribe(handler)
+
+def unsubscribe(handler: Subscriber) -> None:
+    """Remove a subscriber from the bus."""
+    _get_backend().unsubscribe(handler)
 
 def shutdown() -> None:
     """Clean shutdown of the bus."""

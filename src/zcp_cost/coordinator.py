@@ -78,7 +78,7 @@ class CostCoordinator:
             breakdown=estimates
         )
         
-        # Validate against schema
+        # Validate against schema (dict() method now uses by_alias=True by default)
         validate(result.dict(), "CostEstimate")
         
         # Publish event

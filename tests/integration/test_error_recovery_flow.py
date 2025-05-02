@@ -26,7 +26,7 @@ from zcp_lint.linter import Linter
 from zcp_lint.models import LintRequest
 from zcp_preset.loader import PresetLoader
 from zcp_preset.model import Preset
-from zcp_rollout.models import RolloutJob, RolloutResult
+from zcp_rollout.models import RolloutJob, RolloutReport, HostResult
 from zcp_rollout.orchestrator import RolloutOrchestrator
 from zcp_template.renderer import RenderRequest, TemplateRenderer, TokensInfra
 from zcp_validate.models import ValidationJob
@@ -186,7 +186,7 @@ class TestErrorRecoveryFlow:
             
             # Configuration for partial failure
             def mock_transfer(host, content, filepath):
-                result = RolloutResult()
+                result = HostResult(hostname=host, success=True, message="")
                 # Succeed for host1, fail for host2, succeed for host3
                 if host == "host2.example.com":
                     result.success = False

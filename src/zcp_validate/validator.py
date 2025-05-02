@@ -77,10 +77,15 @@ class Validator:
                     message=f"Error querying NRDB: {str(e)}"
                 )
         
+        # Calculate pass rate
+        pass_count = sum(1 for r in host_results.values() if r.within_threshold)
+        pass_rate = pass_count / len(host_results) if host_results else 0.0
+        
         # Create validation result
         result = ValidationResult(
             host_results=host_results,
-            query_duration_ms=(time.time() - start_time) * 1000
+            query_duration_ms=(time.time() - start_time) * 1000,
+            pass_rate=pass_rate
         )
         
         # Validate against schema

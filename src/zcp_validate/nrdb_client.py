@@ -41,7 +41,7 @@ class CircuitBreaker:
         self._threshold = threshold
         self._reset_seconds = reset_seconds
         self._failures = 0
-        self._open_since = 0.0
+        self._open_since = None  # Using None to indicate closed circuit
     
     @property
     def is_open(self) -> bool:
@@ -51,25 +51,35 @@ class CircuitBreaker:
         Returns:
             True if circuit is open, False otherwise
         """
+        # If circuit isn't open, return False immediately
+        if self._open_since is None:
+            return False
+            
         # Check if we should try to reset
-        if self._failures >= self._threshold:
-            current_time = time.time()
-            if current_time - self._open_since >= self._reset_seconds:
-                # Reset circuit
-                self._failures = 0
-                return False
-            return True
-        return False
+        current_time = time.time()
+        if current_time - self._open_since >= self._reset_seconds:
+            # Reset circuit completely
+            self.reset()
+            return False
+            
+        # Circuit is open and reset time hasn't elapsed
+        return True
     
     def record_failure(self):
         """Record a failure and potentially open the circuit."""
         self._failures += 1
-        if self._failures == self._threshold:
+        if self._failures >= self._threshold and self._open_since is None:
+            # Only set open_since when transitioning from closed to open
             self._open_since = time.time()
     
     def record_success(self):
         """Record a success and reset the failure count."""
+        self.reset()
+        
+    def reset(self):
+        """Reset both failure count and open state."""
         self._failures = 0
+        self._open_since = None
 
 
 class NRDBClient:

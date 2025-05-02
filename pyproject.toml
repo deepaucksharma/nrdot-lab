@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "click>=8.0.0",
-    "pydantic>=1.9.0,<2.0.0",
+    "pydantic>=1.9.0,<3.0.0",  # Allow both v1 and v2
     "jinja2>=3.0.0",
     "pyyaml>=6.0.0",
     "jsonschema>=4.0.0",
@@ -46,6 +46,15 @@ path = "src/zcp_core/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/zcp_core", "src/zcp_preset", "src/zcp_template", "src/zcp_cost", "src/zcp_lint", "src/zcp_rollout", "src/zcp_validate", "src/zcp_logging", "src/zcp_cli"]
+include = [
+    "schema/**/*",
+    "src/*/templates/**/*",
+    "src/*/presets/**/*",
+    "src/*/schema/**/*",
+    "docs/runbooks/**/*"
+]
+artifacts = ["schema", "templates", "presets", "runbooks"]
+exclude = ["**/__pycache__", "**/*.pyc"]
 
 [tool.hatch.envs.default]
 dependencies = [
@@ -63,8 +72,14 @@ format = "black {args:.}"
 typecheck = "mypy --strict {args:src}"
 test = "pytest {args:tests/unit}"
 integ = "pytest {args:tests/integration}"
-coverage = "pytest --cov=src --cov-report=html --cov-report=term {args:tests}"
+perf = "pytest -m performance {args:tests}"
+all-tests = "pytest {args:tests}"
+coverage = "pytest --cov=src --cov-report=html --cov-report=term --cov-report=xml {args:tests}"
 coverage-report = "coverage html"
+coverage-component = "pytest --cov=src/{args} --cov-report=html --cov-report=term tests/unit/{args}"
+coverage-summary = "coverage report --skip-empty --sort=Cover"
+coverage-xml = "coverage xml"
+mutation = "pytest-mutate {args:src}"
 
 [tool.ruff]
 select = ["E", "F", "B", "I"]
@@ -86,5 +101,10 @@ markers = [
     "unit: marks a test as a unit test",
     "integration: marks a test as an integration test",
     "performance: marks a test as a performance test",
+    "slow: marks a test that takes longer than average to run",
+    "error_handling: marks a test that focuses on error handling",
+    "concurrent: marks a test that exercises concurrent execution",
+    "security: marks a test related to security aspects"
 ]
+timeout = 300
 

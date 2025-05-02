@@ -35,6 +35,19 @@ class PluginEstimate(BaseModel):
     
     class Config:
         extra = "forbid"
+        allow_population_by_field_name = True
+        
+        @classmethod
+        def alias_generator(cls, string: str) -> str:
+            """Convert snake_case to camelCase for JSON schema compatibility."""
+            components = string.split('_')
+            return components[0] + ''.join(x.title() for x in components[1:])
+            
+    def dict(self, *args, **kwargs):
+        """Override dict method to use aliases by default for schema validation."""
+        if 'by_alias' not in kwargs:
+            kwargs['by_alias'] = True
+        return super().dict(*args, **kwargs)
 
 
 class CostEstimate(BaseModel):
@@ -47,6 +60,19 @@ class CostEstimate(BaseModel):
     
     class Config:
         extra = "forbid"
+        allow_population_by_field_name = True
+        
+        @classmethod
+        def alias_generator(cls, string: str) -> str:
+            """Convert snake_case to camelCase for JSON schema compatibility."""
+            components = string.split('_')
+            return components[0] + ''.join(x.title() for x in components[1:])
+            
+    def dict(self, *args, **kwargs):
+        """Override dict method to use aliases by default for schema validation."""
+        if 'by_alias' not in kwargs:
+            kwargs['by_alias'] = True
+        return super().dict(*args, **kwargs)
 
 
 class CostPlugin(Protocol):
