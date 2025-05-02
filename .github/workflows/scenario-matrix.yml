@@ -1,0 +1,226 @@
+name: Process Sample Optimization Tests
+
+on:
+  schedule:
+    - cron: '0 0 * * 1-5'  # Run nightly Monday-Friday
+  workflow_dispatch:      # Allow manual trigger
+
+env:
+  NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+  NEW_RELIC_API_KEY: ${{ secrets.NEW_RELIC_API_KEY }}
+  NR_ACCOUNT_ID: ${{ secrets.NR_ACCOUNT_ID }}
+
+jobs:
+  scenario-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        scenario_group:
+          - name: "baseline"
+            scenarios: ["A-0", "A-1", "A-2"]
+            commands: ["make baseline", "make lab-baseline", "make lab-opt"]
+            duration: 15
+          - name: "sample-rates"
+            scenarios: ["R-20", "R-60", "R-120"]
+            commands: ["SCEN=R-20 SAMPLE=20 ./scripts/run_one.sh", "SCEN=R-60 SAMPLE=60 ./scripts/run_one.sh", "SCEN=R-120 SAMPLE=120 ./scripts/run_one.sh"]
+            duration: 15
+          - name: "filters"
+            scenarios: ["F-none", "F-current", "F-aggressive", "F-targeted"]
+            commands: ["SCEN=F-none FILTER=no ./scripts/run_one.sh", "SCEN=F-current ./scripts/run_one.sh", "SCEN=F-aggressive PROFILE=default docker compose -f docker-compose.yml -f overrides/filters/aggressive.yml up -d", "SCEN=F-targeted PROFILE=default docker compose -f docker-compose.yml -f overrides/filters/targeted.yml up -d"]
+            duration: 15
+          - name: "otel"
+            scenarios: ["M-0", "M-10", "M-20"]
+            commands: ["SCEN=M-0 PROFILE=bare-agent ./scripts/run_one.sh", "SCEN=M-10 PROFILE=default ./scripts/run_one.sh", "SCEN=M-20 PROFILE=default OTEL_INTERVAL=20 ./scripts/run_one.sh"]
+            duration: 15
+          - name: "event-size"
+            scenarios: ["C-off", "C-on", "C-strip"]
+            commands: ["SCEN=C-off ./scripts/run_one.sh", "SCEN=C-on COLLECT_CMDLINE=true ./scripts/run_one.sh", "SCEN=C-strip COLLECT_CMDLINE=true STRIP_CMDLINE=true ./scripts/run_one.sh"]
+            duration: 15
+          - name: "load"
+            scenarios: ["L-light", "L-heavy", "L-io"]
+            commands: ["SCEN=L-light STRESS_CPU=1 STRESS_MEM=64M ./scripts/run_one.sh", "SCEN=L-heavy STRESS_CPU=8 STRESS_MEM=1G ./scripts/run_one.sh", "SCEN=L-io LOAD_STRESSOR=--hdd 1 ./scripts/run_one.sh"]
+            duration: 15
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: Set DURATION environment variable
+        run: echo "DURATION=${{ matrix.scenario_group.duration }}" >> $GITHUB_ENV
+
+      - name: Run ${{ matrix.scenario_group.name }} scenarios
+        run: |
+          mkdir -p results
+          for cmd in ${{ join(matrix.scenario_group.commands, ' ') }}; do
+            echo "Running: $cmd"
+            eval $cmd
+            sleep 30
+          done
+
+      - name: Generate visualizations
+        run: |
+          pip install matplotlib numpy
+          python3 ./scripts/generate_visualization.py
+
+      - name: Upload results as artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: scenario-results-${{ matrix.scenario_group.name }}
+          path: results/
+          retention-days: 7
+
+  compare-and-notify:
+    needs: scenario-matrix
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'  # Only run on scheduled events
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: current-results
+
+      - name: Compare with previous run
+        run: |
+          # Create comparison script
+          cat > compare_results.py << 'EOF'
+          #!/usr/bin/env python3
+          import os
+          import json
+          import glob
+          from datetime import datetime, timedelta
+          
+          # Get today's and yesterday's dates
+          today = datetime.now().strftime('%Y%m%d')
+          yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y%m%d')
+          
+          # Find all result files
+          current_files = glob.glob(f'current-results/scenario-results-*/*_{today}*/*.json')
+          prev_files = glob.glob(f'previous-results/scenario-results-*/*_{yesterday}*/*.json')
+          
+          # Build lookup table for previous results
+          prev_results = {}
+          for file in prev_files:
+              with open(file, 'r') as f:
+                  try:
+                      data = json.load(f)
+                      scenario = data.get('scenario_id', 'unknown')
+                      prev_results[scenario] = data
+                  except:
+                      continue
+          
+          # Compare and generate report
+          comparison = []
+          for file in current_files:
+              with open(file, 'r') as f:
+                  try:
+                      data = json.load(f)
+                      scenario = data.get('scenario_id', 'unknown')
+                      
+                      if scenario in prev_results:
+                          prev_data = prev_results[scenario]
+                          
+                          # Calculate differences
+                          daily_gb_diff = float(data.get('daily_gb', 0)) - float(prev_data.get('daily_gb', 0))
+                          daily_gb_pct = (daily_gb_diff / float(prev_data.get('daily_gb', 1))) * 100 if float(prev_data.get('daily_gb', 0)) > 0 else 0
+                          
+                          vis_delay_diff = 0
+                          vis_delay_pct = 0
+                          if 'visibility_delay_s' in data and 'visibility_delay_s' in prev_data:
+                              vis_delay_diff = float(data.get('visibility_delay_s', 0)) - float(prev_data.get('visibility_delay_s', 0))
+                              vis_delay_pct = (vis_delay_diff / float(prev_data.get('visibility_delay_s', 1))) * 100 if float(prev_data.get('visibility_delay_s', 0)) > 0 else 0
+                          
+                          comparison.append({
+                              'scenario': scenario,
+                              'daily_gb': float(data.get('daily_gb', 0)),
+                              'daily_gb_diff': daily_gb_diff,
+                              'daily_gb_pct': daily_gb_pct,
+                              'visibility_delay_s': float(data.get('visibility_delay_s', 0)) if 'visibility_delay_s' in data else 'N/A',
+                              'vis_delay_diff': vis_delay_diff,
+                              'vis_delay_pct': vis_delay_pct
+                          })
+                  except Exception as e:
+                      print(f"Error processing {file}: {str(e)}")
+                      continue
+          
+          # Sort by largest changes
+          comparison.sort(key=lambda x: abs(x.get('daily_gb_pct', 0)), reverse=True)
+          
+          # Generate markdown summary
+          with open('comparison_report.md', 'w') as f:
+              f.write("# ProcessSample Optimization Results Comparison\n\n")
+              f.write(f"Comparing results from {yesterday} to {today}\n\n")
+              
+              f.write("## Notable Changes\n\n")
+              f.write("| Scenario | Daily GB | Change | Visibility Delay (s) | Change |\n")
+              f.write("|----------|----------|--------|---------------------|--------|\n")
+              
+              for item in comparison:
+                  daily_gb = f"{item['daily_gb']:.2f}"
+                  daily_gb_diff = f"{item['daily_gb_diff']:.2f} ({item['daily_gb_pct']:.1f}%)"
+                  
+                  if item['visibility_delay_s'] == 'N/A':
+                      vis_delay = 'N/A'
+                      vis_delay_diff = 'N/A'
+                  else:
+                      vis_delay = f"{item['visibility_delay_s']:.1f}"
+                      vis_delay_diff = f"{item['vis_delay_diff']:.1f} ({item['vis_delay_pct']:.1f}%)"
+                  
+                  f.write(f"| {item['scenario']} | {daily_gb} | {daily_gb_diff} | {vis_delay} | {vis_delay_diff} |\n")
+              
+              f.write("\n\nFor complete results, check the CI artifacts.")
+          
+          # Generate a shorter summary for Slack
+          with open('slack_summary.txt', 'w') as f:
+              f.write(f"ProcessSample Optimization Results ({today}):\n\n")
+              
+              for i, item in enumerate(comparison[:5]):  # Top 5 changes
+                  daily_gb = f"{item['daily_gb']:.2f}"
+                  daily_gb_diff = f"{item['daily_gb_diff']:.2f} ({item['daily_gb_pct']:.1f}%)"
+                  
+                  if item['visibility_delay_s'] == 'N/A':
+                      vis_delay = 'N/A'
+                  else:
+                      vis_delay = f"{item['visibility_delay_s']:.1f}s"
+                  
+                  f.write(f"{i+1}. Scenario {item['scenario']}: {daily_gb} GB/day ({daily_gb_diff}), Delay: {vis_delay}\n")
+          EOF
+          
+          chmod +x compare_results.py
+          mkdir -p previous-results
+          
+          # Download yesterday's artifacts if available (might fail on first run)
+          gh run download --repo ${{ github.repository }} --name scenario-results-* --dir previous-results || true
+          
+          # Run comparison
+          python3 compare_results.py
+          
+          if [ -f comparison_report.md ]; then
+            echo "::set-output name=has_comparison::true"
+          else
+            echo "::set-output name=has_comparison::false"
+          fi
+        id: compare
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Send Slack notification
+        if: steps.compare.outputs.has_comparison == 'true'
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          payload-file-path: 'slack_summary.txt'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Upload comparison report
+        if: steps.compare.outputs.has_comparison == 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: comparison-report
+          path: |
+            comparison_report.md
+            slack_summary.txt
+          retention-days: 7

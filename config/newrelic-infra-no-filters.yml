@@ -1,0 +1,6 @@
+license_key: ${NEW_RELIC_LICENSE_KEY}
+enable_process_metrics: true
+metrics_process_sample_rate: ${SAMPLE:-60}
+collect_process_commandline: false
+
+# No process filtering

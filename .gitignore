@@ -19,3 +19,25 @@ scripts/*_report.md
 
 # Exclude MkDocs cache
 .cache/
+
+# Binary and application files - Added May 2025
+*.exe
+*.dll
+*.pak
+*.dat
+chrome_*_percent.pak
+resources.pak
+snapshot_blob.bin
+v8_context_snapshot.bin
+vulkan-1.dll
+vk_swiftshader*
+d3dcompiler_47.dll
+ffmpeg.dll
+icudtl.dat
+libEGL.dll
+libGLESv2.dll
+locales/
+resources/
+Squirrel-UpdateSelf.log
+squirrel.exe
+*.bak

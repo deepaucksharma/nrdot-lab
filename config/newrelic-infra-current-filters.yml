@@ -1,0 +1,9 @@
+license_key: ${NEW_RELIC_LICENSE_KEY}
+enable_process_metrics: true
+metrics_process_sample_rate: ${SAMPLE:-60}
+collect_process_commandline: false
+
+# Current filtering configuration
+exclude_matching_metrics:
+  process.name: ["systemd", "cron", "containerd", "dockerd", "sshd", "bash", "sh"]
+  process.executable: ["/usr/bin/containerd", "/usr/sbin/cron", "/usr/bin/docker", "/usr/sbin/sshd"]

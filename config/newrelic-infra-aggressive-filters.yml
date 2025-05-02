@@ -1,0 +1,9 @@
+license_key: ${NEW_RELIC_LICENSE_KEY}
+enable_process_metrics: true
+metrics_process_sample_rate: ${SAMPLE:-60}
+collect_process_commandline: false
+
+# Aggressive filtering configuration
+exclude_matching_metrics:
+  process.name: ["systemd", "cron", "containerd", "dockerd", "sshd", "bash", "sh", "agetty", "dbus-daemon", "polkitd", "rsyslogd", "snapd", "systemd-journald", "systemd-logind", "systemd-networkd", "systemd-resolved", "systemd-timesyncd", "systemd-udevd", "udisksd"]
+  process.executable: ["/usr/bin/containerd", "/usr/sbin/cron", "/usr/bin/docker", "/usr/sbin/sshd", "/usr/bin/dbus-daemon", "/usr/lib/policykit-1/polkitd", "/usr/sbin/rsyslogd", "/usr/lib/snapd/snapd"]

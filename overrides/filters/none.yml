@@ -1,0 +1,6 @@
+services:
+  infra:
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - ./config/newrelic-infra-no-filters.yml:/etc/newrelic-infra.yml:ro

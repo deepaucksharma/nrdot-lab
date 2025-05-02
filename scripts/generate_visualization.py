@@ -1,180 +1,134 @@
 #!/usr/bin/env python3
 """
-Visualization script for ProcessSample optimization results.
-Creates charts from experiment data.
+Results Visualization Generator
+
+This script processes all result JSON files and generates visualizations:
+1. Ingest vs. Sample Rate plot
+2. Cost vs. Visibility Latency scatter plot
 """
 
 import os
-import sys
 import json
 import glob
-import re
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from datetime import datetime
 
-def find_latest_results():
-    """Find the latest results directory"""
-    results_dir = "./results"
-    if not os.path.exists(results_dir):
-        print(f"❌ Results directory not found: {results_dir}")
-        sys.exit(1)
-    
-    # Get all timestamp directories
-    timestamp_dirs = glob.glob(f"{results_dir}/*/")
-    if not timestamp_dirs:
-        print("❌ No result directories found")
-        sys.exit(1)
-    
-    # Sort by directory name (timestamp)
-    latest_dir = sorted(timestamp_dirs)[-1]
-    return latest_dir.rstrip('/')
-
-def extract_ingest_data(results_dir):
-    """Extract ingest data from results files"""
-    scenarios = {}
-    
-    # Look for results files
-    results_files = glob.glob(f"{results_dir}/*_results.txt") + glob.glob(f"{results_dir}/*_validation.txt")
-    
-    for file_path in results_files:
-        # Extract scenario name from filename
-        scenario_name = os.path.basename(file_path).split('_')[0]
-        
-        # Read file and extract ingest value
+def load_all_results():
+    """Load all results JSON files from the results directory."""
+    results = []
+    for result_file in glob.glob('results/*/*.json'):
         try:
-            with open(file_path, 'r') as f:
-                content = f.read()
-                match = re.search(r'ProcessSample ingest.*?(\d+\.\d+|\d+)', content)
-                if match:
-                    ingest_value = float(match.group(1))
-                    scenarios[scenario_name] = ingest_value
+            with open(result_file, 'r') as f:
+                data = json.load(f)
+                # Extract run date from directory path
+                run_date = os.path.basename(os.path.dirname(result_file))
+                data['run_date'] = run_date
+                results.append(data)
         except Exception as e:
-            print(f"Warning: Could not process {file_path}: {e}")
-    
-    return scenarios
+            print(f"Error loading {result_file}: {str(e)}")
+    return results
 
-def generate_bar_chart(data, output_dir):
-    """Generate a bar chart comparing scenario ingest volumes"""
-    if not data:
-        print("❌ No data available for bar chart")
+def group_by_run_date(results):
+    """Group results by run date."""
+    grouped = {}
+    for result in results:
+        run_date = result.get('run_date')
+        if run_date not in grouped:
+            grouped[run_date] = []
+        grouped[run_date].append(result)
+    return grouped
+
+def plot_ingest_vs_sample_rate(results, run_date, output_dir):
+    """Generate plot showing ingest vs sample rate."""
+    # Filter for rate-sweep scenarios (R-* pattern)
+    rate_sweep = [r for r in results if r.get('scenario_id', '').startswith('R-')]
+    
+    if not rate_sweep:
+        print(f"No rate sweep data for {run_date}")
         return
     
-    # Create figure
+    # Sort by sample rate
+    rate_sweep.sort(key=lambda x: int(x.get('current_rate', 0)))
+    
+    rates = [int(r.get('current_rate', 0)) for r in rate_sweep]
+    daily_gb = [float(r.get('daily_gb', 0)) for r in rate_sweep]
+    
+    # Create the plot
     plt.figure(figsize=(10, 6))
+    plt.plot(rates, daily_gb, 'o-', linewidth=2, markersize=8)
+    plt.xlabel('Sample Rate (seconds)', fontsize=12)
+    plt.ylabel('Daily Ingest (GB)', fontsize=12)
+    plt.title(f'ProcessSample Ingest vs Sample Rate - {run_date}', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.7)
     
-    # Prepare data
-    scenarios = list(data.keys())
-    ingest_values = list(data.values())
+    # Add value annotations
+    for i, (rate, gb) in enumerate(zip(rates, daily_gb)):
+        plt.annotate(f"{gb:.2f} GB", 
+                    xy=(rate, gb),
+                    xytext=(5, 5),
+                    textcoords='offset points')
     
-    # Color code (baseline should be red, others blue)
-    colors = ['#ff6b6b' if s == 'baseline' else '#4dabf7' for s in scenarios]
-    
-    # Create bar chart
-    plt.bar(scenarios, ingest_values, color=colors)
-    
-    # Add value labels on top of bars
-    for i, v in enumerate(ingest_values):
-        plt.text(i, v + 0.05, f"{v:.2f}", ha='center')
-    
-    # Calculate reduction percentages if baseline exists
-    if 'baseline' in data:
-        baseline_value = data['baseline']
-        for i, (scenario, value) in enumerate(data.items()):
-            if scenario != 'baseline':
-                reduction = (1 - value / baseline_value) * 100
-                plt.text(i, value / 2, f"{reduction:.1f}%\nreduction", ha='center', color='white', fontweight='bold')
-    
-    # Formatting
-    plt.title('ProcessSample Ingest by Scenario (GB)', fontsize=14)
-    plt.ylabel('Ingest Volume (GB)')
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.tight_layout()
-    
-    # Save chart
-    output_path = f"{output_dir}/ingest_comparison.png"
-    plt.savefig(output_path)
-    print(f"✅ Bar chart saved to {output_path}")
-    
-    return output_path
+    # Save the plot
+    os.makedirs(output_dir, exist_ok=True)
+    plt.savefig(f"{output_dir}/ingest_vs_rate_{run_date}.png", dpi=300, bbox_inches='tight')
+    plt.close()
 
-def create_markdown_report(data, chart_path, output_dir):
-    """Create a Markdown report with the chart and analysis"""
-    if not data:
-        print("❌ No data available for report")
+def plot_cost_vs_visibility(results, run_date, output_dir):
+    """Generate scatter plot of cost vs visibility delay."""
+    # Filter for scenarios that have visibility delay measurements
+    valid_results = [r for r in results if 'visibility_delay_s' in r and 'daily_gb' in r]
+    
+    if not valid_results:
+        print(f"No visibility delay data for {run_date}")
         return
-    
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    report_path = f"{output_dir}/visualization_report.md"
-    
-    with open(report_path, 'w') as f:
-        f.write(f"# ProcessSample Optimization Visualization Report\n\n")
-        f.write(f"Generated: {now}\n\n")
-        
-        f.write("## Ingest Volume Comparison\n\n")
-        f.write(f"![Ingest Comparison]({os.path.basename(chart_path)})\n\n")
-        
-        f.write("## Data Summary\n\n")
-        f.write("| Scenario | Ingest Volume (GB) | % of Baseline |\n")
-        f.write("|----------|-------------------|---------------|\n")
-        
-        # Sort scenarios so baseline is first
-        sorted_scenarios = sorted(data.keys(), key=lambda x: 0 if x == 'baseline' else 1)
-        baseline_value = data.get('baseline', 1.0)
-        
-        for scenario in sorted_scenarios:
-            value = data[scenario]
-            percentage = 100 if scenario == 'baseline' else (value / baseline_value) * 100
-            f.write(f"| {scenario} | {value:.3f} | {percentage:.1f}% |\n")
-        
-        f.write("\n## Analysis\n\n")
-        
-        if 'baseline' in data:
-            baseline_value = data['baseline']
-            reductions = []
-            
-            for scenario, value in data.items():
-                if scenario != 'baseline':
-                    reduction = (1 - value / baseline_value) * 100
-                    reductions.append((scenario, reduction))
-            
-            if reductions:
-                max_reduction = max(reductions, key=lambda x: x[1])
-                f.write(f"The most effective configuration was **{max_reduction[0]}** with a **{max_reduction[1]:.1f}%** reduction in ProcessSample ingest volume compared to the baseline.\n\n")
-                
-                for scenario, reduction in reductions:
-                    f.write(f"- **{scenario}**: {reduction:.1f}% reduction\n")
-        else:
-            f.write("No baseline data available for comparative analysis.\n")
-    
-    print(f"✅ Markdown report saved to {report_path}")
-    return report_path
-
-def main():
-    """Main function"""
-    print("🔍 ProcessSample Optimization Visualization Tool")
-    
-    # Find latest results
-    results_dir = find_latest_results()
-    print(f"📊 Using results from: {results_dir}")
     
     # Extract data
-    data = extract_ingest_data(results_dir)
+    daily_gb = [float(r.get('daily_gb', 0)) for r in valid_results]
+    delay_s = [float(r.get('visibility_delay_s', 0)) for r in valid_results]
+    labels = [r.get('scenario_id', 'unknown') for r in valid_results]
     
-    if not data:
-        print("❌ No ProcessSample ingest data found in result files")
-        sys.exit(1)
+    # Create the scatter plot
+    plt.figure(figsize=(10, 6))
+    scatter = plt.scatter(daily_gb, delay_s, s=100, alpha=0.7)
     
-    print(f"📈 Found data for {len(data)} scenarios: {', '.join(data.keys())}")
+    plt.xlabel('Daily Ingest (GB)', fontsize=12)
+    plt.ylabel('Visibility Delay (seconds)', fontsize=12)
+    plt.title(f'Cost vs Visibility Trade-off - {run_date}', fontsize=14)
+    plt.grid(True, linestyle='--', alpha=0.7)
     
-    # Generate visualization
-    chart_path = generate_bar_chart(data, results_dir)
+    # Add labels for each point
+    for i, label in enumerate(labels):
+        plt.annotate(label, 
+                    xy=(daily_gb[i], delay_s[i]),
+                    xytext=(5, 5),
+                    textcoords='offset points')
     
-    # Create report
-    if chart_path:
-        report_path = create_markdown_report(data, chart_path, results_dir)
-        print(f"🎉 Visualization complete! See {report_path} for the full report")
+    # Save the plot
+    os.makedirs(output_dir, exist_ok=True)
+    plt.savefig(f"{output_dir}/cost_vs_visibility_{run_date}.png", dpi=300, bbox_inches='tight')
+    plt.close()
+
+def main():
+    # Load all results
+    results = load_all_results()
+    if not results:
+        print("No results found")
+        return
+    
+    # Group by run date
+    grouped_results = group_by_run_date(results)
+    
+    # Generate plots for each run date
+    for run_date, run_results in grouped_results.items():
+        output_dir = f"results/visualizations/{run_date}"
+        os.makedirs(output_dir, exist_ok=True)
+        
+        print(f"Generating plots for {run_date}...")
+        plot_ingest_vs_sample_rate(run_results, run_date, output_dir)
+        plot_cost_vs_visibility(run_results, run_date, output_dir)
+        
+    print("Visualization generation complete")
 
 if __name__ == "__main__":
     main()
