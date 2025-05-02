@@ -1,9 +1,39 @@
-license_key: ${NEW_RELIC_LICENSE_KEY}
-enable_process_metrics: true
-metrics_process_sample_rate: 60
-collect_process_commandline: false
+# New Relic Infrastructure Agent - ProcessSample Optimization
+# Generated from template - do not edit directly
 
-# Modern filtering syntax (works with agent v1.40+)
+license_key: ${NEW_RELIC_LICENSE_KEY}
+
+# ProcessSample optimization settings
+metrics_process_sample_rate: 60  # Default: 60s interval
+collect_command_line: false      # Default: do not collect command lines 
+
+# Standard settings
+collect_inventory_interval: 30
+plugins_auto_update: false
+log_file: "/var/log/newrelic-infra/newrelic-infra.log"
+verbose: 1
+
+# Process filtering configuration - standard filter set
 exclude_matching_metrics:
-  process.name: ["systemd", "cron", "containerd", "dockerd", "sshd", "bash", "sh"]
-  process.executable: ["/usr/bin/containerd", "/usr/sbin/cron", "/usr/bin/docker", "/usr/sbin/sshd"]
+  process.systemd.*: true
+  process.kworker.*: true
+  process.kthreadd.*: true
+  process.rcu.*: true
+  process.migration.*: true
+  process.ksoftirqd.*: true
+  process.sshd.*: true
+  process.chronyd.*: true
+  process.crond.*: true
+  process.upstart.*: true
+  process.init.*: true
+  process.lsmd.*: true
+  process.systemd-journal.*: true
+  process.dbus-daemon.*: true
+  process.atd.*: true
+  process.lvmetad.*: true
+  process.smartd.*: true
+  process.iscsid.*: true
+  process.gssproxy.*: true
+  process.bash.cpu.user: true
+  process.bash.cpu.system: true
+  process.bash.memory.rss: true

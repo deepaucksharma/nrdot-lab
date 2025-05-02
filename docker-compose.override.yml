@@ -1,7 +1,0 @@
-services:
-  infra:
-    tmpfs:
-      - /var/db/newrelic-infra
-  load:
-    tmpfs:
-      - /home/appuser

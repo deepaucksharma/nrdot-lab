@@ -1,4 +1,4 @@
-# Set default behavior to automatically normalize line endings.
+# Auto detect text files and perform LF normalization
 * text=auto
 
 # Unix scripts should use LF line endings
@@ -7,21 +7,14 @@ scripts/* text eol=lf
 load-image/* text eol=lf
 load-image/entrypoint* text eol=lf
 
-# Make shell scripts executable
-*.sh text eol=lf executable
-scripts/* text eol=lf executable
-load-image/entrypoint* text eol=lf executable
+# Declare text files with specific extensions
+*.md text
+*.yml text
+*.yaml text
+*.json text
 
-# Declare Windows batch files
-*.bat text eol=crlf
-*.ps1 text eol=crlf
-
-# Don't modify binaries
+# Declare binary files
 *.png binary
 *.jpg binary
 *.jpeg binary
 *.gif binary
-*.ico binary
-*.zip binary
-*.tar binary
-*.gz binary

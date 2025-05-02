@@ -1,96 +1,56 @@
 # ProcessSample Filter Definitions
-# This file contains different filtering strategies for the New Relic Infrastructure agent
+# Central location for all filter patterns
 
-# STANDARD FILTER START
-# Standard filter - excludes common system processes
-  process.jstatd.*: true
-  process.sshd.*: true
-  process.splunkd.*: true
+# NONE: No filtering (baseline for comparison)
+none: {}
+
+# STANDARD: Basic system process filtering
+standard:
   process.systemd.*: true
-  process.chrony.*: true
-  process.chronyd.*: true
-  process.ntpd.*: true
-  process.auditd.*: true
-  process.dockerd.*: true
-  process.containerd.*: true
-  process.crond.*: true
-  process.upstart.*: true
-  process.init.*: true
-  process.kthreadd.*: true
   process.kworker.*: true
-  process.kauditd.*: true
+  process.kthreadd.*: true
   process.rcu.*: true
   process.migration.*: true
   process.ksoftirqd.*: true
+  process.sshd.*: true
+  process.chronyd.*: true
+  process.crond.*: true
+  process.upstart.*: true
+  process.init.*: true
   process.lsmd.*: true
   process.systemd-journal.*: true
-  process.systemd-logind.*: true
-  process.systemd-udevd.*: true
-  process.pickup.*: true
-  process.qmgr.*: true
-  process.master.*: true
   process.dbus-daemon.*: true
-  process.accounts-daemon.*: true
   process.atd.*: true
-  process.lldpd.*: true
   process.lvmetad.*: true
-  process.blkmapd.*: true
   process.smartd.*: true
   process.iscsid.*: true
   process.gssproxy.*: true
-  process.cfg.*: true
-  process.watchdog.*: true
   process.bash.cpu.user: true
   process.bash.cpu.system: true
   process.bash.memory.rss: true
-  process.mdadm.*: true
-  process.snmpd.*: true
-  process.irqbalance.*: true
-# STANDARD FILTER END
 
-# AGGRESSIVE FILTER START
-# Aggressive filter - maximum process filtering
-  process.jstatd.*: true
-  process.sshd.*: true
-  process.splunkd.*: true
+# AGGRESSIVE: Maximum filtering
+aggressive:
   process.systemd.*: true
-  process.chrony.*: true
-  process.chronyd.*: true
-  process.ntpd.*: true
-  process.auditd.*: true
-  process.dockerd.*: true
-  process.containerd.*: true
-  process.crond.*: true
-  process.upstart.*: true
-  process.init.*: true
-  process.kthreadd.*: true
   process.kworker.*: true
-  process.kauditd.*: true
+  process.kthreadd.*: true
   process.rcu.*: true
   process.migration.*: true
   process.ksoftirqd.*: true
+  process.sshd.*: true
+  process.chronyd.*: true
+  process.crond.*: true
+  process.upstart.*: true
+  process.init.*: true
   process.lsmd.*: true
   process.systemd-journal.*: true
-  process.systemd-logind.*: true
-  process.systemd-udevd.*: true
-  process.pickup.*: true
-  process.qmgr.*: true
-  process.master.*: true
   process.dbus-daemon.*: true
-  process.accounts-daemon.*: true
   process.atd.*: true
-  process.lldpd.*: true
   process.lvmetad.*: true
-  process.blkmapd.*: true
   process.smartd.*: true
   process.iscsid.*: true
   process.gssproxy.*: true
-  process.cfg.*: true
-  process.watchdog.*: true
   process.bash.*: true
-  process.mdadm.*: true
-  process.snmpd.*: true
-  process.irqbalance.*: true
   process.syslogd.*: true
   process.rsyslogd.*: true
   process.gvfs.*: true
@@ -99,9 +59,7 @@
   process.networkd.*: true
   process.networkmanager.*: true
   process.cupsd.*: true
-  process.wpa_supplicant.*: true
   process.avahi.*: true
-  process.tracker.*: true
   process.rpcbind.*: true
   process.postfix.*: true
   process.agetty.*: true
@@ -112,157 +70,54 @@
   process.lvm.*: true
   process.nfsiod.*: true
   process.ps.*: true
-  process.whoopsie.*: true
   process.sudo.*: true
-  process.iptables.*: true
   process.snapd.*: true
-  process.ovsdb.*: true
   process.polkitd.*: true
   process.libvirtd.*: true
-  process.policykit.*: true
   process.cron.*: true
   process.crontab.*: true
-  process.bash.cpu.*: true
-  process.bash.memory.*: true
-  process.kernel.*: true
   process.getty.*: true
   process.dconf.*: true
   process.rtkit.*: true
   process.tpm.*: true
   process.acpid.*: true
-  process.packagekitd.*: true
-  process.hostnamed.*: true
   process.login.*: true
-  process.session.*: true
   process.mount.*: true
   process.automount.*: true
   process.uuidd.*: true
   process.fwupd.*: true
   process.gdm.*: true
-  process.squid.*: true 
-  process.unattended-upgrade.*: true
   process.apt.*: true
   process.yum.*: true
   process.dnf.*: true
   process.dpkg.*: true
   process.rpm.*: true
-  process.vmtoolsd.*: true
-  process.haveged.*: true
-  process.mcelog.*: true
-  process.rngd.*: true
-  process.sssd.*: true
-  process.dm-event.*: true
-  process.lvmetad.*: true
-  process.nslcd.*: true
-  process.nscd.*: true
-  process.certmonger.*: true
-  process.VGAuthService.*: true
-  process.timesyncd.*: true
-  process.logrotate.*: true
-  process.afs.*: true
-  process.nrpe.*: true
-  process.winbindd.*: true
-  process.ntpd.*: true
-  process.chronyd.*: true
-  process.auditd.*: true
-  process.sftp-server.*: true
-  process.sh.*: true
-  process.python.*: true
-  process.perl.*: true
-  process.sbin.*: true
-  process.sendmail.*: true
-  process.anacron.*: true
-  process.plymouthd.*: true
-  process.sm-notify.*: true
-  process.conmon.*: true
-  process.stunnel.*: true
-  process.dirmngr.*: true
-  process.corosync.*: true
-  process.xfs.*: true
-  process.lttng.*: true
-  process.cpufreqd.*: true
-  process.apport.*: true
-  process.abrtd.*: true
-  process.ModemManager.*: true
-  process.cups.*: true
-# AGGRESSIVE FILTER END
 
-# TARGETED FILTER START
-# Targeted filter - include only specific processes, exclude everything else
-  process.*.cpu.user: true
-  process.*.cpu.system: true
-  process.*.cpu.waitIO: true
-  process.*.memory.rss: true
-  process.*.memory.vms: true
-  # Include only web servers, databases, and application processes
-  process.apache*.cpu.user: false
-  process.apache*.cpu.system: false
-  process.apache*.cpu.waitIO: false
-  process.apache*.memory.rss: false
-  process.apache*.memory.vms: false
-  process.nginx*.cpu.user: false
-  process.nginx*.cpu.system: false
-  process.nginx*.cpu.waitIO: false
-  process.nginx*.memory.rss: false
-  process.nginx*.memory.vms: false
-  process.mysql*.cpu.user: false
-  process.mysql*.cpu.system: false
-  process.mysql*.cpu.waitIO: false
-  process.mysql*.memory.rss: false
-  process.mysql*.memory.vms: false
-  process.postgres*.cpu.user: false
-  process.postgres*.cpu.system: false
-  process.postgres*.cpu.waitIO: false
-  process.postgres*.memory.rss: false
-  process.postgres*.memory.vms: false
-  process.mongodb*.cpu.user: false
-  process.mongodb*.cpu.system: false
-  process.mongodb*.cpu.waitIO: false
-  process.mongodb*.memory.rss: false
-  process.mongodb*.memory.vms: false
-  process.redis*.cpu.user: false
-  process.redis*.cpu.system: false
-  process.redis*.cpu.waitIO: false
-  process.redis*.memory.rss: false
-  process.redis*.memory.vms: false
-  process.java*.cpu.user: false
-  process.java*.cpu.system: false
-  process.java*.cpu.waitIO: false
-  process.java*.memory.rss: false
-  process.java*.memory.vms: false
-  process.node*.cpu.user: false
-  process.node*.cpu.system: false
-  process.node*.cpu.waitIO: false
-  process.node*.memory.rss: false
-  process.node*.memory.vms: false
-  process.python*.cpu.user: false
-  process.python*.cpu.system: false
-  process.python*.cpu.waitIO: false
-  process.python*.memory.rss: false
-  process.python*.memory.vms: false
-  process.php*.cpu.user: false
-  process.php*.cpu.system: false
-  process.php*.cpu.waitIO: false
-  process.php*.memory.rss: false
-  process.php*.memory.vms: false
-  process.ruby*.cpu.user: false
-  process.ruby*.cpu.system: false
-  process.ruby*.cpu.waitIO: false
-  process.ruby*.memory.rss: false
-  process.ruby*.memory.vms: false
-  process.docker*.cpu.user: false
-  process.docker*.cpu.system: false
-  process.docker*.cpu.waitIO: false
-  process.docker*.memory.rss: false
-  process.docker*.memory.vms: false
-  process.containerd*.cpu.user: false
-  process.containerd*.cpu.system: false
-  process.containerd*.cpu.waitIO: false
-  process.containerd*.memory.rss: false
-  process.containerd*.memory.vms: false
-  process.stress-ng*.cpu.user: false
-  process.stress-ng*.cpu.system: false
-  process.stress-ng*.cpu.waitIO: false
-  process.stress-ng*.memory.rss: false
-  process.stress-ng*.memory.vms: false
-# TARGETED FILTER END
+# TARGETED: Only include specific processes (whitelist approach)
+targeted:
+  # Block everything by default
+  process.*.cpu.*: true
+  process.*.memory.*: true
+  # Allow specific processes
+  process.apache*.cpu.*: false
+  process.apache*.memory.*: false
+  process.nginx*.cpu.*: false
+  process.nginx*.memory.*: false
+  process.mysql*.cpu.*: false
+  process.mysql*.memory.*: false
+  process.postgres*.cpu.*: false
+  process.postgres*.memory.*: false
+  process.mongo*.cpu.*: false
+  process.mongo*.memory.*: false
+  process.redis*.cpu.*: false
+  process.redis*.memory.*: false
+  process.java*.cpu.*: false
+  process.java*.memory.*: false
+  process.node*.cpu.*: false
+  process.node*.memory.*: false
+  process.python*.cpu.*: false
+  process.python*.memory.*: false
+  process.docker*.cpu.*: false
+  process.docker*.memory.*: false
+  process.stress-ng*.cpu.*: false
+  process.stress-ng*.memory.*: false
