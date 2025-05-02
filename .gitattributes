@@ -1,0 +1,20 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Unix scripts should use LF line endings
+*.sh text eol=lf
+scripts/* text eol=lf
+load-image/* text eol=lf
+load-image/entrypoint* text eol=lf
+
+# Declare text files with specific extensions
+*.md text
+*.yml text
+*.yaml text
+*.json text
+
+# Declare binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary

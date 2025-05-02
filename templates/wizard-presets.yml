@@ -1,0 +1,71 @@
+presets:
+  web_standard:
+    description: "Generic Nginx + Node stack"
+    sample_rate: 90
+    filter_type: "aggressive"
+    overrides:
+      exclude_matching_metrics:
+        process.nginx.*: false
+        process.node.*: false
+
+  jvm_large:
+    description: "Large JVM app server"
+    sample_rate: 30
+    filter_type: "standard"
+    overrides:
+      collect_command_line: true
+
+  db_server:
+    description: "Database server (MySQL, PostgreSQL)"
+    sample_rate: 60
+    filter_type: "aggressive"
+    overrides:
+      exclude_matching_metrics:
+        process.mysqld.*: false
+        process.postgres.*: false
+        process.redis.*: false
+        process.mongo.*: false
+
+  batch_processing:
+    description: "Batch processing workload"
+    sample_rate: 120
+    filter_type: "standard"
+    overrides:
+      exclude_matching_metrics:
+        process.python.*: false
+        process.java.*: false
+
+  microservices:
+    description: "Microservices cluster"
+    sample_rate: 60
+    filter_type: "aggressive"
+    overrides:
+      exclude_matching_metrics:
+        process.java.*: false
+        process.node.*: false
+        process.python.*: false
+        process.go.*: false
+
+  minimal_monitoring:
+    description: "Minimal monitoring (cost-focused)"
+    sample_rate: 300
+    filter_type: "aggressive"
+    overrides:
+      collect_command_line: false
+
+  full_visibility:
+    description: "Maximum visibility (tier-1 only)"
+    sample_rate: 20
+    filter_type: "aggressive"
+    overrides:
+      collect_command_line: true
+
+  legacy_systems:
+    description: "Legacy systems monitoring"
+    sample_rate: 60
+    filter_type: "standard"
+    overrides:
+      exclude_matching_metrics:
+        process.java.*: false
+        process.tomcat.*: false
+        process.weblogic.*: false

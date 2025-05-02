@@ -1,0 +1,77 @@
+filters:
+  standard:
+    description: "Standard filter set for common background processes"
+    patterns:
+      # Browser processes
+      process.chrome.*: true
+      process.firefox.*: true
+      process.edge.*: true
+      process.safari.*: true
+      
+      # Desktop apps
+      process.slack.*: true
+      process.teams.*: true
+      process.zoom.*: true
+      process.vscode.*: true
+      process.code.*: true
+      process.spotify.*: true
+      process.discord.*: true
+      
+      # System utilities
+      process.fsnotifier.*: true
+      process.helper.*: true
+      process.updater.*: true
+
+  aggressive:
+    description: "Aggressive filter set with maximum filtering"
+    patterns:
+      # Browser processes
+      process.chrome.*: true
+      process.firefox.*: true
+      process.edge.*: true
+      process.safari.*: true
+      
+      # Desktop apps
+      process.slack.*: true
+      process.teams.*: true
+      process.zoom.*: true
+      process.vscode.*: true
+      process.code.*: true
+      process.spotify.*: true
+      process.discord.*: true
+      
+      # System utilities
+      process.fsnotifier.*: true
+      process.helper.*: true
+      process.updater.*: true
+      
+      # Additional aggressive filters
+      process.*tmp*: true
+      process.*cache*: true
+      process.*daemon*: true
+      process.*helper*: true
+      process.*notifier*: true
+      process.*updater*: true
+      process.*background*: true
+      
+      # Except critical processes
+      process.nginx.*: false
+      process.java.*: false
+      process.node.*: false
+      process.python*: false
+      process.ruby*: false
+      process.php*: false
+      process.mysqld*: false
+      process.postgres*: false
+      process.redis*: false
+      process.mongo*: false
+      process.kafka*: false
+      process.zookeeper*: false
+      process.elasticsearch*: false
+      process.cassandra*: false
+
+  minimal:
+    description: "Minimal filter set for testing"
+    patterns:
+      process.chrome.*: true
+      process.firefox.*: true

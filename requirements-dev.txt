@@ -1,0 +1,20 @@
+-e .
+
+# Testing
+pytest>=7.3.1
+pytest-cov>=4.1.0
+pytest-snapshot>=0.9.0
+pytest-benchmark>=4.0.0
+pytest-docker>=1.0.1
+hypothesis>=6.82.0
+tox>=4.11.3
+
+# Code quality
+ruff>=0.1.5
+mypy>=1.5.1
+bandit>=1.7.5
+
+# Advanced testing
+cosmic-ray>=8.3.6
+atheris>=2.3.0
+schemathesis>=3.19.7

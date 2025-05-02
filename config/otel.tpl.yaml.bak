@@ -1,0 +1,83 @@
+receivers:
+  hostmetrics:
+    collection_interval: ${OTEL_INTERVAL}
+    scrapers:
+      # CPU metrics
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      
+      # Standard system metrics - always enabled
+      disk:
+      filesystem:
+      load:
+      memory:
+      network:
+      paging:
+      
+      # Process metrics - can be controlled with ENABLE_PROCESS_METRICS
+      ${ENABLE_PROCESS_METRICS:+process:
+        mute_process_name_error: true
+        metrics:
+          process.cpu.utilization:
+            enabled: true}
+
+  # Docker metrics - only enabled when ENABLE_DOCKER_STATS is true
+  ${ENABLE_DOCKER_STATS:+docker_stats:
+    collection_interval: ${OTEL_INTERVAL}
+    endpoint: unix:///var/run/docker.sock
+    timeout: 20s
+    api_version: 1.24}
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+  resource:
+    attributes:
+      - key: service.name
+        value: "process-lab-otel"
+        action: upsert
+      - key: service.instance.id
+        value: "${HOSTNAME}"
+        action: upsert
+
+  metricstransform:
+    transforms:
+      - include: system.cpu.utilization
+        action: update
+        operations:
+          - action: aggregate_labels
+            aggregation_type: sum
+            label_set: [ cpu ]
+
+      - include: system.memory.utilization
+        action: update
+        operations:
+          - action: aggregate_labels
+            aggregation_type: sum
+            label_set: [ state ]
+
+exporters:
+  otlp:
+    endpoint: https://otlp.nr-data.net:4317
+    headers:
+      api-key: ${NEW_RELIC_LICENSE_KEY}
+
+  logging:
+    verbosity: ${OTEL_LOG_LEVEL:-normal}
+
+service:
+  pipelines:
+    metrics:
+      receivers: [hostmetrics${ENABLE_DOCKER_STATS:+, docker_stats}]
+      processors: [resource, metricstransform, batch]
+      exporters: [otlp, logging]
+
+  telemetry:
+    logs:
+      level: ${OTEL_LOG_LEVEL:-info}
+    metrics:
+      level: ${OTEL_LOG_LEVEL:-normal}

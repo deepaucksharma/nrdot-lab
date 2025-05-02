@@ -1,0 +1,18 @@
+# Generated {{ timestamp }} by process-lab
+#
+# Sample rate: {{ sample_rate }}s
+# Filter type: {{ filter_type }}
+
+metrics_process_sample_rate: {{ sample_rate }}
+exclude_matching_metrics:
+{% for pattern, excluded in filter_patterns.items() %}
+  {{ pattern }}: {{ excluded | lower }}
+{% endfor %}
+{% if collect_command_line is defined %}
+collect_command_line: {{ collect_command_line | lower }}
+{% else %}
+collect_command_line: false
+{% endif %}
+{% if log_file is defined %}
+log_file: {{ log_file }}
+{% endif %}
