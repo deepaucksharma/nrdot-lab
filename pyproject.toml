@@ -1,0 +1,112 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zcp"
+dynamic = ["version"]
+description = "Zero Config Process - Agent configuration toolkit"
+readme = "README.md"
+authors = [
+    { name = "NewRelic Team", email = "team@example.com" },
+]
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "click>=8.0.0",
+    "pydantic>=1.9.0,<3.0.0",  # Allow both v1 and v2
+    "jinja2>=3.0.0",
+    "pyyaml>=6.0.0",
+    "jsonschema>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.3.0",
+    "mypy>=1.3.0",
+    "pytest>=7.3.1",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.0.270",
+]
+
+[project.scripts]
+zcp = "zcp_cli.main:cli"
+zcp-simple = "zcp_cli.simple_cli:cli"
+zcp-config = "zcp_cli.config_only_cli:cli"
+
+[tool.hatch.version]
+path = "src/zcp_core/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zcp_core", "src/zcp_preset", "src/zcp_template", "src/zcp_cost", "src/zcp_lint", "src/zcp_rollout", "src/zcp_validate", "src/zcp_logging", "src/zcp_cli"]
+include = [
+    "schema/**/*",
+    "src/*/templates/**/*",
+    "src/*/presets/**/*",
+    "src/*/schema/**/*",
+    "docs/runbooks/**/*"
+]
+artifacts = ["schema", "templates", "presets", "runbooks"]
+exclude = ["**/__pycache__", "**/*.pyc"]
+
+[tool.hatch.envs.default]
+dependencies = [
+    "black>=23.3.0",
+    "mypy>=1.3.0",
+    "pytest>=7.3.1",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
+    "ruff>=0.0.270",
+]
+
+[tool.hatch.envs.default.scripts]
+lint = "ruff {args:.}"
+format = "black {args:.}"
+typecheck = "mypy --strict {args:src}"
+test = "pytest {args:tests/unit}"
+integ = "pytest {args:tests/integration}"
+perf = "pytest -m performance {args:tests}"
+all-tests = "pytest {args:tests}"
+coverage = "pytest --cov=src --cov-report=html --cov-report=term --cov-report=xml {args:tests}"
+coverage-report = "coverage html"
+coverage-component = "pytest --cov=src/{args} --cov-report=html --cov-report=term tests/unit/{args}"
+coverage-summary = "coverage report --skip-empty --sort=Cover"
+coverage-xml = "coverage xml"
+mutation = "pytest-mutate {args:src}"
+
+[tool.ruff]
+select = ["E", "F", "B", "I"]
+ignore = []
+line-length = 100
+target-version = "py38"
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "unit: marks a test as a unit test",
+    "integration: marks a test as an integration test",
+    "performance: marks a test as a performance test",
+    "slow: marks a test that takes longer than average to run",
+    "error_handling: marks a test that focuses on error handling",
+    "concurrent: marks a test that exercises concurrent execution",
+    "security: marks a test related to security aspects"
+]
+timeout = 300
+
