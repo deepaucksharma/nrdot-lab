@@ -1,0 +1,34 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit:
+    strategy:
+      matrix:
+        py: [3.8, 3.9, "3.10", 3.11, 3.12]
+        project: ["zcp_preset", "zcp_template", "zcp_cost", "zcp_rollout", "zcp_lint", "zcp_validate", "zcp_logging", "zcp_core", "zcp_cli"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.py }}
+      - run: pip install hatch
+      - run: hatch run lint --project ${{ matrix.project }}
+      - run: hatch run test --project ${{ matrix.project }}
+
+  integration:
+    needs: unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - run: pip install hatch docker
+      - run: hatch run integ

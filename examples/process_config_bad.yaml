@@ -1,0 +1,15 @@
+# This is an example of a problematic configuration with lint issues
+
+integrations:
+  - name: nri-process-discovery
+    config:
+      # Extremely low sample rate - will cause high resource usage
+      interval: 2
+      
+      discovery:
+        mode: unsupported-mode
+        match_patterns:
+          - java
+          - ""  # Empty pattern
+          
+      # Missing settings

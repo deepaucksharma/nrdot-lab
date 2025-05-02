@@ -1,0 +1,13 @@
+# Java Heavy Preset
+# For Java applications with high memory usage and many threads
+id: java_heavy
+default_sample_rate: 10
+filter_mode: include
+tier1_patterns:
+  - java
+  - javaw
+  - jboss
+  - tomcat
+  - spring
+expected_keep_ratio: 0.25
+avg_bytes_per_sample: 2048

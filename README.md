@@ -1,141 +1,100 @@
-# Infra-Lab: ProcessSample Optimization Toolkit 🚀
+# ZCP - Zero Config Process
 
-[![CI](https://github.com/deepaucksharma/infra-lab/actions/workflows/ci.yml/badge.svg)](./.github/workflows/ci.yml)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+ZCP is a toolkit for configuring, deploying, and managing process monitoring agents at scale.
 
-A toolkit and local lab environment for discovering, predicting, generating, validating, and rolling out cost-optimized **New Relic ProcessSample** configurations using the New Relic Infrastructure Agent and NRDB analysis. Aim to reduce ingest costs significantly (targeting ≤ 1-2 GB/host/day) while preserving essential process visibility.
+## Features
 
-| 🔗 Docs Quick Start | 🔗 Full Specification | 🔗 CLI Help |
-|--------------------|-----------------------|-------------|
-| [Quick Start Guide](docs/quickstart.md) | [Technical Spec](docs/technical-specification.md) | `process-lab --help` |
+- **Preset-based configuration**: Leverage tested configuration templates for common use cases.
+- **Cost Estimation**: Predict data ingest costs before deployment.
+- **Template Rendering**: Generate agent configurations using Jinja2 templates.
+- **Rollout Management**: Safely deploy configurations to large fleets of hosts.
+- **Validation**: Verify that deployed configurations are working as expected.
+- **Linting**: Check configurations for common issues and best practices.
+- **Structured Logging**: Consistent logging with context and OpenTelemetry support.
 
----
+## Architecture
 
-## 1. The Challenge & Solution
+ZCP follows a modular, event-driven architecture:
 
-ProcessSample events provide deep visibility but can be expensive due to high frequency (default 20s), high cardinality (per-process), and potentially large event size (with command lines). Turning them off saves cost but hurts observability.
+- **Control Plane**: Core components that handle configuration and management.
+- **Data Plane**: Host agents and data collection infrastructure.
 
-Infra-Lab helps find the right balance:
+Components communicate via an event bus with pluggable backends (sync, async, or trace mode).
 
-*   **Analyze:** Uses NRDB data (if API key provided) to understand current process landscape.
-*   **Model:** Employs static and dynamic models to predict cost/visibility impact of changes.
-*   **Generate:** Creates Infrastructure Agent `newrelic-infra.yml` configurations based on templates, presets, or recommendations.
-*   **Lint:** Checks configurations for potential risks (e.g., filtering critical processes).
-*   **Recommend:** Suggests optimized configurations based on NRDB data and constraints.
-*   **Rollout:** Generates artifacts (Ansible, scripts) for deploying configurations.
-*   **(Local Lab):** Includes a Docker Compose setup (`compose/`) for *manually* testing generated configurations with a load generator and OTel collector.
+## Getting Started
 
----
-
-## 2. Architecture
-
-The core toolkit is a Python CLI application. It interacts with NRDB via the GraphQL API (for analysis and dynamic cost modeling) and generates static YAML configuration files for the New Relic Infrastructure Agent.
-
-```mermaid
-flowchart LR
-    subgraph "User Machine"
-        CLI["process-lab CLI Tool"]
-    end
-
-    subgraph "Target Host(s)"
-        direction LR
-        subgraph "Generated Artifacts"
-            CFG["newrelic-infra.yml"]
-        end
-        subgraph "Agent"
-             AGENT["NR Infrastructure Agent"]
-        end
-        CFG --> AGENT
-    end
-
-    subgraph "New Relic Platform"
-        NR[(NRDB)]
-        API[GraphQL API]
-    end
-
-    CLI -- Generate --> CFG
-    CLI -- Analyze/Estimate --> API
-    AGENT -- ProcessSample --> NR
-    NR -- Data --> API
-
-    style CLI fill:#cfe2f3,stroke:#333
-    style AGENT fill:#d9ead3,stroke:#333
-    style NR fill:#e4d1f4,stroke:#333
-    style API fill:#e4d1f4,stroke:#333
-
-
-(Note: The optional Docker environment in compose/ is for local testing and is not directly managed by the process-lab CLI commands like up/down.)
-
-## 3. Core Goals
-
-| ID  | Goal                                  | Target                                                        |
-| --- | ------------------------------------- | ------------------------------------------------------------- |
-| G1  | Reduce ProcessSample ingest           | ≤ 1-2 GB/day/host (typical ~70% reduction)                    |
-| G2  | Preserve Tier-1 process visibility   | Critical processes remain unfiltered                            |
-| G3  | Achieve ±10% cost estimate accuracy | vs. actual NrConsumption data                                 |
-| G4  | Provide actionable CLI & templates    | Minimize manual YAML editing                                  |
-
-(See Technical Specification for full details.)
-
-## 4. Quick Start
-
-See the detailed [Quick Start Guide](docs/quickstart.md).
-
-## 5. Repository Map
-
-```text
-deepaucksharma-infra-lab/
-├── README.md                 <- You are here
-├── pyproject.toml            <- Build definition, dependencies, CLI entry point
-├── tox.ini                   <- Test automation configuration
-├── .env.example              <- Environment variable template (API keys etc.)
-│
-├── src/
-│   └── process_lab/          <- Main package source code
-│       ├── __init__.py
-│       ├── cli/              <- Typer CLI application (app.py, commands.py)
-│       ├── client/           <- API clients (nrdb.py)
-│       ├── core/             <- Core logic (config.py, cost.py, analysis.py)
-│       ├── models/           <- Cost models (static.py, dynamic.py, blended.py)
-│       └── utils/            <- Utilities (lint.py, rollout.py, templates.py)
-│
-├── templates/                <- Source templates
-│   ├── newrelic-infra.tpl.yaml   <- Agent config Jinja2 template
-│   ├── filter-definitions.yml    <- Process filter pattern definitions
-│   └── wizard-presets.yml        <- Pre-defined configuration presets
-│
-├── config/                   <- Default *output* location for generated configs
-│   └── newrelic-infra.yml    <- Example/Default output file (overwritten by CLI!)
-│
-├── compose/                  <- Docker Compose environment for *manual* local testing
-│   ├── docker-compose.yml
-│   └── ...
-│
-├── nrdb_analysis/            <- Useful NRQL queries & dashboard JSON
-│   ├── README.md
-│   └── ...
-│
-├── tests/                    <- Pytest test suite (unit, integration, etc.)
-└── docs/                     <- Documentation files (quickstart.md, faq.md, etc.)
-```
-
-## 6. Contributing
-
-Development uses tox for testing and linting.
+### Installation
 
 ```bash
-# Install for development (editable mode + dev dependencies)
-pip install -e ".[dev]"
-
-# Run all checks (linting, typing, tests)
-tox -p auto
-
-# Run specific tests
-tox -e lint
-tox -e unit
-tox -e integration
+pip install zcp
 ```
 
-We enforce Ruff, MyPy, high test coverage (via pytest-cov), and low mutation test survival rates (via cosmic-ray). Please see `tox.ini` for details.
+### Quick Start
 
-MIT License © 2025 New Relic Inc.
+```bash
+# List available presets
+zcp preset list
+
+# Show details of a preset
+zcp preset show java_heavy
+
+# Run the configuration wizard
+zcp wizard --preset java_heavy --host-count 100
+
+# Lint a configuration
+zcp lint check config.yaml
+
+# Deploy to hosts
+zcp rollout execute --hosts host1.example.com,host2.example.com --config config.yaml
+
+# Validate configuration
+zcp validate check --hosts host1.example.com,host2.example.com --expected 10.5
+```
+
+## Components
+
+- `zcp_core`: Core utilities and event bus.
+- `zcp_preset`: Preset loading and management.
+- `zcp_template`: Template rendering with Jinja2.
+- `zcp_cost`: Cost estimation with plugin architecture.
+- `zcp_rollout`: Deployment with multiple backends (SSH, Ansible, Print).
+- `zcp_validate`: Validation with NRDB integration.
+- `zcp_lint`: Configuration linting with rule-based architecture.
+- `zcp_logging`: Structured logging with OpenTelemetry support.
+- `zcp_cli`: Command-line interface for all components.
+
+## Development
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/example/zcp.git
+cd zcp
+
+# Install development dependencies
+pip install hatch
+
+# Run tests
+hatch run test
+```
+
+### Development Workflow
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development guidelines.
+
+### Project Status
+
+See [CURRENT_STATUS.md](CURRENT_STATUS.md) for current project status and roadmap.
+
+## Documentation
+
+For full documentation, see the `docs/` directory.
+
+- **Architecture Decisions**: See `docs/adr/` for architecture decision records.
+- **Runbooks**: See `docs/runbooks/` for operational runbooks.
+- **Component READMEs**: Each component has its own README with usage examples.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
