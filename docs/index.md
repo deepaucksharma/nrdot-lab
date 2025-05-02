@@ -17,19 +17,50 @@ A containerized environment that reduces New Relic ProcessSample ingest by 70% w
 cp .env.example .env
 # Edit with your NR license key, API key, and account ID
 
-# Start the lab
+# Generate configurations
+make generate-configs
+
+# Start the lab with optimized settings
 make up
 
-# Check results (after 5 minutes)
+# Validate results (after 5-10 minutes)
 make validate
 ```
 
-## Scenarios
+## Windows Quick Start
 
-| Scenario | Command | Use Case |
+```powershell
+# Configure credentials
+Copy-Item .env.example .env
+# Edit with your NR license key, API key, and account ID
+
+# Generate configurations
+.\process-lab.ps1 generate-configs
+
+# Start the lab with optimized settings
+.\process-lab.ps1 up
+
+# Validate results (after 5-10 minutes)
+.\process-lab.ps1 validate
+```
+
+## Configuration Options
+
+| Configuration | Command | Use Case |
 |----------|---------|----------|
 | **Standard** | `make up` | General optimization |
 | **Docker-Stats** | `make docker-stats` | Container metrics |
+| **Minimal Mounts** | `make minimal` | Restricted filesystem access |
+| **Secure Mode** | `make secure-mode` | Toggle secure execution |
+
+## Filter Types
+
+| Filter | Command | Description |
+|--------|---------|-------------|
+| None | `make filter-none` | No filtering (baseline) |
+| Standard | `make filter-standard` | Basic system process filtering |
+| Aggressive | `make filter-aggressive` | Maximum filtering (recommended) |
+| Targeted | `make filter-targeted` | Whitelist approach - only include specified processes |
 
 ## Documentation Map
 
@@ -37,12 +68,12 @@ make validate
 - [Infrastructure vs OpenTelemetry Comparison](comparison-table.md)
 - [Current Scenarios](scenarios.md)
 - [Advanced Scenarios](advanced-scenarios.md)
-- [Strategic Roadmap](roadmap.md)
 - **How-to Guides**
   - [Installation](how-to/install.md)
   - [Validation](how-to/validate.md)
   - [Troubleshooting](how-to/troubleshoot.md)
   - [Customization](how-to/extend.md)
+  - [Windows](how-to/windows.md)
 - **Reference**
   - [Technical Architecture](reference/technical-architecture.md)
   - [Infrastructure Configuration](reference/newrelic-infra.md)
@@ -54,9 +85,10 @@ make validate
 - **Infrastructure Agent**: Collects ProcessSample with optimized configuration
 - **OpenTelemetry Collector**: Provides system metrics via hostmetrics receiver
 - **Synthetic Load Generator**: Creates realistic process patterns for testing
+- **Unified Configuration**: Template-based configuration system for customization
 
 ## Prerequisites
 
 - Docker and Docker Compose
-- `jq` (for validation)
+- Python 3.6+ (for visualization)
 - New Relic account with license key, API key, and account ID

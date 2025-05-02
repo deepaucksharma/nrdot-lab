@@ -1,0 +1,20 @@
+# New Relic Infrastructure Agent - ProcessSample Optimization Template
+# This is a template file that will be used to generate specific configurations
+
+license_key: $NEW_RELIC_LICENSE_KEY
+
+# ProcessSample optimization settings
+# (modify these through environment variables or template generation)
+metrics_process_sample_rate: 60  # Default: 60s interval
+collect_command_line: false      # Default: do not collect command lines 
+
+# Additional settings
+collect_inventory_interval: 30
+plugins_auto_update: false
+log_file: "/var/log/newrelic-infra/newrelic-infra.log"
+verbose: 1
+
+# Process filtering configuration
+# This section will be replaced during template generation
+exclude_matching_metrics:
+  # Filter patterns will be inserted here from filter-definitions.yml

@@ -1,144 +1,84 @@
-# ProcessSample Cost Optimization Testing
+# ProcessSample Testing Scenarios
 
-This document provides instructions for running the ProcessSample cost optimization experiments both locally and in CI.
+This document outlines the available testing scenarios and how to run them.
 
-## Local Testing
+## Available Scenarios
 
-### Prerequisites
+| Category | Scenarios | Purpose |
+|----------|-----------|---------|
+| Baseline | A-0, A-1, A-2 | Establish baseline and basic optimization |
+| Sample Rate | R-20, R-30, R-60, R-90, R-120 | Test different sample rates |
+| Filtering | F-none, F-standard, F-aggressive, F-targeted | Compare filtering strategies |
+| OpenTelemetry | M-0, M-5, M-10, M-20, M-docker | Analyze OTel contribution |
+| Event Size | C-off, C-on | Test command line collection impact |
+| Load Testing | L-light, L-heavy, L-io | Test under different loads |
 
-1. Docker and Docker Compose installed
-2. Python 3.6+ with matplotlib and numpy installed
-3. New Relic account with license key and API key
-4. PowerShell (for Windows) or Bash (for Linux/Mac)
+## Running Scenarios
 
-### Setup
+### Windows
 
-1. Edit the `.env` file to include your New Relic credentials:
+```powershell
+# Run a single scenario
+.\process-lab.ps1 baseline
+.\process-lab.ps1 filter-aggressive
 
-```
-NEW_RELIC_LICENSE_KEY=your_license_key_here
-NEW_RELIC_API_KEY=your_api_key_here  
-NR_ACCOUNT_ID=your_account_id_here
-```
-
-2. For Windows, you can also edit the `run_all_scenarios.bat` file to include these values directly.
-
-### Running All Scenarios
-
-#### Windows
-
-```
+# Run all scenarios
 .\run_all_scenarios.bat
 ```
 
-This will run a shortened version of all scenario categories, with each test running for about 10 minutes.
-
-#### Linux/Mac
+### Linux/macOS
 
 ```bash
-# Make scripts executable
-chmod +x scripts/*.sh
+# Run a single scenario
+make baseline
+make filter-aggressive
 
-# Run the shell version
+# Run all scenarios
 ./scripts/run_all_scenarios.sh
 ```
 
-### Running Individual Scenarios
-
-You can run individual scenarios using the Makefile targets or directly with the run_one script:
-
-#### Using Makefile (Linux/Mac/Windows with make)
+### Manual Scenario Configuration
 
 ```bash
-# Run baseline tests
-make baseline
-make lab-baseline
-make lab-opt
+# Windows
+.\process-lab.ps1 up -FilterType aggressive -SampleRate 60 -DockerStats
 
-# Run sample rate sweep
-make rate-sweep
-
-# Run other categories
-make filter-matrix
-make otel-study
-make event-size
-make load-light
-make load-heavy
-make load-io
+# Linux/macOS
+FILTER_TYPE=aggressive SAMPLE_RATE=60 ENABLE_DOCKER_STATS=true make up
 ```
-
-#### Using run_one script directly
-
-Windows:
-```powershell
-# Example: Run the baseline test
-powershell -Command ".\scripts\run_one.ps1 -SCEN 'A-0' -PROFILE 'bare-agent' -SAMPLE 20 -DURATION 30"
-```
-
-Linux/Mac:
-```bash
-# Example: Run the baseline test
-SCEN=A-0 PROFILE=bare-agent SAMPLE=20 DURATION=30 ./scripts/run_one.sh
-```
-
-## CI Integration
-
-The repository includes a GitHub Actions workflow configuration in `.github/workflows/scenario-matrix.yml` that runs all test scenarios in a matrix on a nightly schedule.
-
-### GitHub Actions Setup
-
-1. Add the following secrets to your GitHub repository:
-   - `NEW_RELIC_LICENSE_KEY`
-   - `NEW_RELIC_API_KEY`
-   - `NR_ACCOUNT_ID`
-   - `SLACK_WEBHOOK_URL` (optional, for notifications)
-
-2. The workflow will:
-   - Run different scenario groups in parallel
-   - Save results as artifacts
-   - Generate visualizations
-   - Compare results with the previous night's run
-   - Post a summary to Slack (if configured)
-
-### Manual Trigger
-
-You can also manually trigger the workflow from the GitHub Actions UI using the "workflow_dispatch" event.
 
 ## Results and Visualization
 
-All test results are stored in the `results/` directory with timestamps. The structure is:
+Results are stored in the `results/` directory with timestamps:
 
 ```
 results/
   YYYYMMDD_HHMMSS/
-    A-0.json         # Scenario results
-    A-0_docker_stats.txt   # Resource usage
-    A-1.json
-    ...
-  visualizations/    # Generated after running visualize
-    YYYYMMDD_HHMMSS/
-      ingest_vs_rate_*.png
-      cost_vs_visibility_*.png
+    scenario-name.json     # Validation results
+    scenario-name_docker_stats.txt   # Resource usage
 ```
 
-Run the visualization script to generate plots:
+Generate visualizations with:
 
 ```bash
 # Windows
-python .\scripts\generate_visualization.py
+.\process-lab.ps1 visualize
 
-# Linux/Mac
-python3 ./scripts/generate_visualization.py
+# Linux/macOS
+make visualize
 ```
 
 ## Interpreting Results
 
-See `docs/experiments.md` for detailed information about each scenario, expected outcomes, and how to interpret the results.
+The key metrics to analyze:
 
-The key metrics to look for:
 - **PS_GB_DAY**: Daily ProcessSample data volume
 - **VIS_DELAY_S**: Visibility delay in seconds
-- **METRIC_GB_DAY**: Daily Metric data volume from OpenTelemetry
-- Agent resource usage (CPU/Memory)
+- **METRIC_GB_DAY**: Daily metric data volume from OpenTelemetry
+- **TOTAL_GB_DAY**: Combined data volume
 
-The main goal is to find the optimal balance between cost reduction and observability quality.
+The main goal is to find the optimal balance between cost reduction and observability quality. The recommended configuration is:
+
+- Sample Rate: 60 seconds
+- Filter Type: Aggressive
+- OTel Interval: 10 seconds

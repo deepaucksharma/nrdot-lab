@@ -1,6 +1,6 @@
 receivers:
   hostmetrics:
-    collection_interval: 20s
+    collection_interval: 10s
     scrapers:
       cpu:
         metrics:
@@ -19,11 +19,11 @@ receivers:
             enabled: true
 
   # Optional Docker metrics receiver - enabled via environment variable
-  :
-    ${ENABLE_DOCKER_STATS:+collection_interval: 20s}
-    
-    
-    
+  docker:
+    ${ENABLE_DOCKER_STATS:+collection_interval: 10s}
+    endpoint: unix:///var/run/docker.sock
+    timeout: 20s
+    api_version: 1.24
 
 processors:
   batch:
@@ -71,7 +71,7 @@ exporters:
 service:
   pipelines:
     metrics:
-      receivers: [hostmetrics]
+      receivers: [hostmetrics, docker]
       processors: [resource, metricstransform, batch]
       exporters: [otlp, logging]
 

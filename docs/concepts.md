@@ -1,6 +1,6 @@
 # ProcessSample Optimization Concepts
 
-## The Problem
+## The Challenge
 
 ProcessSample events contribute significantly to data ingest costs due to:
 
@@ -10,28 +10,34 @@ ProcessSample events contribute significantly to data ingest costs due to:
 
 ## Optimization Strategies
 
-### 1. Sample Rate Throttling (67% reduction)
+### 1. Sample Rate Adjustment
 
-Increasing the interval from 20s to 60s:
+Increasing the collection interval from 20s to 60s:
 
 ```yaml
 # config/newrelic-infra.yml
 metrics_process_sample_rate: 60
 ```
 
-### 2. Process Filtering (5-10% additional reduction)
+**Result**: ~67% reduction in ProcessSample volume
 
-Excluding non-essential processes:
+### 2. Process Filtering
+
+Excluding non-essential system processes:
 
 ```yaml
 # config/newrelic-infra.yml
 exclude_matching_metrics:
-  process.*.*: true
+  process.systemd.*: true
+  process.kworker.*: true
+  # Additional process patterns
 ```
 
-### 3. OpenTelemetry Metrics (Preserves visibility)
+**Result**: ~5-10% additional reduction (on top of sample rate adjustment)
 
-Complementing with higher-frequency system metrics:
+### 3. OpenTelemetry Supplementation
+
+Adding higher-frequency system metrics to maintain visibility:
 
 ```yaml
 # config/otel-config.yaml
@@ -40,7 +46,9 @@ receivers:
     collection_interval: 10s
 ```
 
-## Optimization Flow
+**Result**: Preserved system visibility with minimal data volume increase
+
+## Optimization Architecture
 
 ```mermaid
 flowchart TD
@@ -53,9 +61,14 @@ flowchart TD
     F --> G[Cost Optimization]
 ```
 
-## Expected Results
+## Configuration Matrix
 
-| Configuration | Rate | Filtering | Expected Reduction |
-|---------------|------|-----------|-------------------|
-| Standard | 60s | Yes | ~70-75% |
-| With Container Metrics | 60s | Yes | ~65-70% |
+| Sample Rate | Filter Type | OTel Interval | Data Reduction | Visibility Impact |
+|-------------|-------------|---------------|----------------|-------------------|
+| 20s | None | None | 0% (baseline) | None |
+| 60s | None | None | ~67% | Minor |
+| 60s | Standard | 10s | ~70% | Minimal |
+| 60s | Aggressive | 10s | ~75% | Low |
+| 120s | Aggressive | 5s | ~85% | Moderate |
+
+The lab environment allows testing all these configurations to find the optimal balance for your specific needs.

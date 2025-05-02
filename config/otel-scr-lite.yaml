@@ -1,54 +1,83 @@
-extensions:
-  health_check: {}
-  storage:
-    type: file_storage
-    directory: /tmp/otel-storage
-    timeout: 10s
-    compaction:
-      directory: /tmp/otel-storage/compaction
-      on_start: true
-      on_rebound: true
-
 receivers:
   hostmetrics:
-    collection_interval: 10s
+    collection_interval: ${INTERVAL:-10s}
     scrapers:
-      # Lite configuration - only CPU and memory
       cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      disk:
+      filesystem:
+      load:
       memory:
-  docker_stats:
-    endpoint: "unix:///var/run/docker.sock"
-    collection_interval: 10s
+      network:
+      paging:
+      process:
+        mute_process_name_error: true
+        metrics:
+          process.cpu.utilization:
+            enabled: true
+
+  # Optional Docker metrics receiver - enabled via environment variable
+  ${ENABLE_DOCKER_STATS:+docker}:
+    ${ENABLE_DOCKER_STATS:+collection_interval: ${INTERVAL:-10s}}
+    ${ENABLE_DOCKER_STATS:+endpoint: unix:///var/run/docker.sock}
+    ${ENABLE_DOCKER_STATS:+timeout: 20s}
+    ${ENABLE_DOCKER_STATS:+api_version: 1.24}
 
 processors:
-  memory_limiter:
-    check_interval: 1s
-    limit_mib: 400
-  filter/core-metrics:
-    metrics:
-      include:
-        match_type: regexp
-        metric_names: ["^system\\.(cpu|memory)\\..*"]
   batch:
-    send_batch_size: 1000
-    timeout: 5s
-    send_batch_max_size: 1500
+    timeout: 1s
+    send_batch_size: 1024
+
+  # Process and standardize dimensions
+  resource:
+    attributes:
+      - key: service.name
+        value: "process-lab-otel"
+        action: upsert
+      - key: service.instance.id
+        value: "${HOSTNAME}"
+        action: upsert
+
+  # Metric processing to reduce cardinality
+  metricstransform:
+    transforms:
+      # Add transforms for specific metrics
+      - include: system.cpu.utilization
+        action: update
+        operations:
+          - action: aggregate_labels
+            aggregation_type: sum
+            label_set: [ cpu ]
+
+      - include: system.memory.utilization
+        action: update
+        operations:
+          - action: aggregate_labels
+            aggregation_type: sum
+            label_set: [ state ]
 
 exporters:
   otlp:
-    endpoint: "otlp.nr-data.net:4317"
+    endpoint: https://otlp.nr-data.net:4317
     headers:
-      api-key: "${NEW_RELIC_LICENSE_KEY}"
-    retry_on_failure:
-      enabled: true
-      initial_interval: 5s
-      max_interval: 30s
-      max_elapsed_time: 5m
+      api-key: ${NEW_RELIC_LICENSE_KEY}
+
+  # Debug logging for development 
+  logging:
+    verbosity: normal
 
 service:
-  extensions: [health_check, storage]
   pipelines:
     metrics:
-      receivers: [hostmetrics]
-      processors: [memory_limiter, filter/core-metrics, batch]
-      exporters: [otlp]
+      receivers: [hostmetrics${ENABLE_DOCKER_STATS:+, docker}]
+      processors: [resource, metricstransform, batch]
+      exporters: [otlp, logging]
+
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      level: normal
+

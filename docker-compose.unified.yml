@@ -2,9 +2,9 @@ version: "3.9"
 
 # Unified Docker Compose configuration with environment variables for flexibility
 # Usage: 
-#   Default scenario: docker-compose up -d
-#   With specific filter: FILTER_TYPE=aggressive docker-compose up -d
-#   With docker stats: ENABLE_DOCKER_STATS=true docker-compose up -d
+#   Default scenario: docker-compose -f docker-compose.unified.yml up -d
+#   With specific filter: docker-compose -f docker-compose.unified.yml -e FILTER_TYPE=aggressive up -d
+#   With docker stats: docker-compose -f docker-compose.unified.yml -e ENABLE_DOCKER_STATS=true up -d
 
 services:
   infra:
@@ -21,9 +21,8 @@ services:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - ./config/newrelic-infra-${FILTER_TYPE:-standard}.yml:/etc/newrelic-infra.yml:ro
-      # Platform-compatible mounts - commented out by default, uncomment as needed
-      # - /var/log:/host/var/log:ro
-      # - /var/lib/docker:/host/var/lib/docker:ro
+      - ${MIN_MOUNTS:-/var/log}:/host/var/log:ro  # Empty if MIN_MOUNTS is not set
+      - ${MIN_MOUNTS:-/var/lib/docker}:/host/var/lib/docker:ro
     tmpfs:
       - /tmp
       - /var/run
@@ -54,8 +53,7 @@ services:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - ./config/otel-${OTEL_CONFIG:-config}.yaml:/etc/otel-config.yaml:ro
-      # Platform-compatible docker socket mount - uncomment when needed
-      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${ENABLE_DOCKER_STATS:+/var/run/docker.sock}:/var/run/docker.sock:ro  # Only mount when ENABLE_DOCKER_STATS is set
     tmpfs:
       - /tmp
       - /var/run
@@ -70,8 +68,6 @@ services:
       resources:
         limits:
           memory: ${OTEL_MEMORY:-512M}
-    depends_on:
-      - infra
 
   load:
     build: 

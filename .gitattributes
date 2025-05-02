@@ -1,0 +1,27 @@
+# Set default behavior to automatically normalize line endings.
+* text=auto
+
+# Unix scripts should use LF line endings
+*.sh text eol=lf
+scripts/* text eol=lf
+load-image/* text eol=lf
+load-image/entrypoint* text eol=lf
+
+# Make shell scripts executable
+*.sh text eol=lf executable
+scripts/* text eol=lf executable
+load-image/entrypoint* text eol=lf executable
+
+# Declare Windows batch files
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Don't modify binaries
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.tar binary
+*.gz binary
