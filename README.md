@@ -45,49 +45,48 @@ ProcessSample events contribute significantly to data ingest costs due to:
 git clone https://github.com/deepaucksharma/infra-lab.git
 cd infra-lab
 
+# Create a virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+
+# Install the package
+pip install .
+
 # Configure credentials
 cp .env.example .env
 # Edit .env with your NR license key, API key, and account ID
 
-# Start the lab with default settings (60s rate, standard filtering)
-python scripts/unified/process_lab.py up
-
-# Validate results (after 5-10 minutes)
-python scripts/unified/process_lab.py validate
+# Run the CLI
+process-lab wizard  # Start the configuration wizard
+process-lab generate  # Generate configuration
+process-lab recommend  # Get optimization recommendations
 ```
+
+### Installation Options
+
+1. **Development Installation**:
+   ```bash
+   # Install in editable mode with development dependencies
+   pip install -e .[dev]
+   ```
+
+2. **Docker Installation**:
+   ```bash
+   # Build the Docker image
+   docker build -t process-lab .
+   
+   # Run the CLI in a container
+   docker run -it process-lab wizard
+   ```
 
 ## Command Interface
 
-The lab uses a unified Python-based command interface that works across all platforms:
+The lab uses a unified Python-based command interface that works across all platforms. Use the `process-lab` command followed by the desired action. For example:
 
 ```bash
-# Start the lab with current settings
-python scripts/unified/process_lab.py up
-
-# Stop the lab
-python scripts/unified/process_lab.py down
-
-# View logs
-python scripts/unified/process_lab.py logs
-
-# Check ingestion reduction
-python scripts/unified/process_lab.py validate --format json
-
-# Remove all containers and volumes
-python scripts/unified/process_lab.py clean
-
-# Generate configuration files manually
-python scripts/unified/process_lab.py generate-configs
-```
-
-For convenience, platform-specific entry points are also available:
-
-```bash
-# Unix/macOS
-./bin/process-lab up
-
-# Windows
-bin\process-lab.bat up
+process-lab wizard  # Start the configuration wizard
+process-lab generate  # Generate configuration
+process-lab recommend  # Get optimization recommendations
 ```
 
 ## Configuration Options
@@ -96,16 +95,16 @@ All options can be provided as command-line arguments:
 
 ```bash
 # Change filter type
-python scripts/unified/process_lab.py up --filter-type aggressive
+process-lab wizard --filter-type aggressive
 
 # Change sample rate
-python scripts/unified/process_lab.py up --sample-rate 120
+process-lab wizard --sample-rate 120
 
 # Enable Docker metrics
-python scripts/unified/process_lab.py up --docker-stats
+process-lab wizard --docker-stats
 
 # Combine multiple options
-python scripts/unified/process_lab.py up --filter-type targeted --sample-rate 60 --docker-stats
+process-lab wizard --filter-type targeted --sample-rate 60 --docker-stats
 ```
 
 ### Filter Types
@@ -117,7 +116,7 @@ python scripts/unified/process_lab.py up --filter-type targeted --sample-rate 60
 | aggressive | Maximum filtering | ~10% |
 | targeted | Whitelist approach | Variable |
 
-The filter definitions are centralized in `config/filter-definitions.yml` for easy management and customization.
+The filter definitions are centralized in `templates/filter-definitions.yml` for easy management and customization.
 
 #### Standard Filtering
 
