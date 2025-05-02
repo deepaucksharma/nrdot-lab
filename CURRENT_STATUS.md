@@ -4,9 +4,23 @@
 
 The ZCP project has completed all core component implementation and is now in the quality assurance and finalization phase. All functional requirements from the technical specification have been implemented, and we're now focusing on quality, test coverage, and documentation.
 
+### Recent Improvements (May 2, 2025)
+
+Several critical functional issues have been fixed:
+
+1. **Data model/schema mismatches**: Fixed snake_case vs camelCase inconsistencies in model validation
+2. **Event bus reliability**: Improved async task handling, added exception handling and unsubscribe capability
+3. **CircuitBreaker logic**: Fixed reset logic in nrdb_client that could lead to incorrect behavior
+4. **Python 3.11+ compatibility**: Updated code to work with recent Python versions 
+5. **Pydantic compatibility**: Added support for both Pydantic v1 and v2
+6. **Resource loading**: Implemented robust resource loading that works in both development and production
+7. **Packaging improvements**: Added all necessary files to wheel packages
+
+For full details, see [FIXES.md](FIXES.md).
+
 ### Current Focus: Testing & Quality Assurance
 
-After successfully implementing all core components, our current focus is on:
+After successfully implementing all core components and fixing critical issues, our current focus is on:
 
 1. **Test Expansion** (High Priority)
    - Increasing unit test coverage to 80%+ across all components
@@ -43,11 +57,12 @@ After successfully implementing all core components, our current focus is on:
    - Logging module with structured logging and OTLP support
    - Circuit breakers and bulkhead patterns for resilience
 
-3. **Project Infrastructure** (70%)
+3. **Project Infrastructure** (80%)
    - Project structure and configuration
    - CI setup with GitHub Actions
    - Initial documentation and examples
    - JSON Schema definitions for all contracts
+   - Fixed critical functional issues
 
 ## How to Continue Development
 
@@ -94,6 +109,8 @@ After successfully implementing all core components, our current focus is on:
 - [x] Validation module
 - [x] Linting module
 - [x] Logging module
+- [x] Fix critical functional issues
 - [ ] Comprehensive tests
 - [ ] Complete documentation
 - [ ] Packaging and distribution
+

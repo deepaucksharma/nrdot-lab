@@ -12,6 +12,22 @@ ZCP is a toolkit for configuring, deploying, and managing process monitoring age
 - **Linting**: Check configurations for common issues and best practices.
 - **Structured Logging**: Consistent logging with context and OpenTelemetry support.
 
+## Streamlined Version
+
+A streamlined version with simplified architecture is available. It provides the same core workflow with:
+
+- Less complexity and better maintainability
+- Fewer dependencies and simpler code paths
+- Easier to understand for new developers
+
+Try it with:
+
+```bash
+python zcp_simple.py wizard --preset java_heavy --host-count 10
+```
+
+See [STREAMLINED.md](STREAMLINED.md) for details.
+
 ## Architecture
 
 ZCP follows a modular, event-driven architecture:
@@ -63,6 +79,18 @@ zcp validate check --hosts host1.example.com,host2.example.com --expected 10.5
 - `zcp_logging`: Structured logging with OpenTelemetry support.
 - `zcp_cli`: Command-line interface for all components.
 
+## Recent Improvements
+
+The latest release includes several important fixes:
+
+- **Fixed Python 3.11+ compatibility**: Event loops now work correctly in all Python versions.
+- **Resolved model/schema discrepancies**: Fixed snake_case vs camelCase inconsistencies.
+- **Improved error handling**: Better handling of exceptions in the event bus.
+- **Enhanced resource loading**: Resources now load correctly in both development and production.
+- **Added Pydantic v2 compatibility**: Code now works with both Pydantic v1 and v2.
+
+For a complete list of fixes, see [FIXES.md](FIXES.md).
+
 ## Development
 
 ### Setup
@@ -93,8 +121,10 @@ For full documentation, see the `docs/` directory.
 
 - **Architecture Decisions**: See `docs/adr/` for architecture decision records.
 - **Runbooks**: See `docs/runbooks/` for operational runbooks.
+- **Test Plans**: See `docs/TEST_IMPROVEMENT_PLAN.md` for testing roadmap.
 - **Component READMEs**: Each component has its own README with usage examples.
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
